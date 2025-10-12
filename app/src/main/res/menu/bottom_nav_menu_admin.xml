@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/adminOrders"
+        android:icon="@drawable/ic_orders"
+        android:title="Đơn hàng" />
+
+    <item
+        android:id="@+id/adminUsers"
+        android:icon="@drawable/ic_users"
+        android:title="Người dùng" />
+
+    <item
+        android:id="@+id/adminStatistics"
+        android:icon="@drawable/ic_statistics"
+        android:title="Thống kê" />
+
+    <!-- Tab gộp 4 mảng quản trị -->
+    <item
+        android:id="@+id/adminManagement"
+        android:icon="@drawable/ic_manage_admin"
+        android:title="Quản lý" />
+</menu>

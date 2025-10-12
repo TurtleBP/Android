@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#5D4037</color>
+    <color name="colorPrimaryDark">#5D4037</color>
+    <color name="colorAccent">#CACACA</color>
+
+    <color name="textColorPrimary">#5D4037</color>
+    <color name="textColorSecondary">#555555</color>
+    <color name="textColorAccent">#CACACA</color>
+    <color name="textColorHeading">#3C3C3C</color>
+    <color name="textColorLink">#032172</color>
+    <color name="textColorDescription">#7C7C7C</color>
+    <color name="roleAdmin">#D32F2F</color>   <!-- đỏ -->
+    <color name="roleUser">#2E7D32</color>    <!-- xanh -->
+    <color name="roleOther">#616161</color>   <!-- xám -->
+    <color name="roleBadgeBgAdmin">#FFEBEE</color> <!-- nền nhạt admin -->
+    <color name="roleBadgeBgUser">#E8F5E9</color>  <!-- nền nhạt user -->
+    <color name="roleBadgeBgOther">#F5F5F5</color> <!-- nền nhạt khác -->
+    <color name="bgMainColor">#F0F0F0</color>
+    <color name="bgFilter">#EFEBE9</color>
+    <color name="dark_pink">#D81B60</color>
+    <color name="transparent">#00000000</color>
+    <color name="white">#ffffff</color>
+    <color name="black">#000000</color>
+    <color name="red">#E33131</color>
+    <color name="green">#43936C</color>
+    <color name="blue">#3F51B5</color>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="light_gray">#FFD3D3D3</color>
+
+    <!-- Primary colors -->
+    <color name="primary">#FF6D4C41</color>
+    <color name="primary_dark">#FF4E342E</color>
+    <color name="primary_light">#FF9C786C</color>
+    <color name="accent">#FFFFAB91</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#DE000000</color>
+    <color name="text_secondary">#8A000000</color>
+    <color name="text_hint">#61000000</color>
+    <color name="red_500">#F44336</color>
+    <!-- Background colors -->
+    <color name="background">#FFF5F5F5</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="error">#FFB00020</color>
+    <color name="error_red">#D32F2F</color>
+    <!-- Gray scale -->
+    <color name="gray_50">#FFFAFAFA</color>
+    <color name="gray_100">#FFF5F5F5</color>
+    <color name="gray_200">#FFEEEEEE</color>
+    <color name="gray_300">#FFE0E0E0</color>
+    <color name="gray_400">#FFBDBDBD</color>
+    <color name="gray_500">#FF9E9E9E</color>
+    <color name="gray_600">#FF757575</color>
+    <color name="gray_700">#FF616161</color>
+    <color name="gray_800">#FF424242</color>
+    <color name="gray_900">#FF212121</color>
+    <color name="blue_500">#2196F3</color>
+    <!-- Additional colors -->
+    <color name="light_brown">#FFD7CCC8</color>
+    <color name="light_pink">#FFF8BBD0</color>
+    <color name="light_green">#FFC8E6C9</color>
+
+    <!-- Bottom Navigation Colors -->
+    <color name="bottom_nav_selected">#FF6D4C41</color>
+    <color name="bottom_nav_unselected">#FF9E9E9E</color>
+
+    <!-- Status bar color -->
+    <color name="status_bar">#FF4E342E</color>
+
+    <color name="primary_color">#6200EE</color>
+    <color name="accent_color">#03DAC5</color>
+    <color name="gray_light">#F5F5F5</color>
+    <color name="gray">#9E9E9E</color>
+    <color name="gray_dark">#424242</color>
+    <color name="divider_color">#E0E0E0</color>
+    <color name="error_color">#B00020</color>
+    <color name="success_color">#00C853</color>
+</resources>

@@ -1,0 +1,108 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- App Name -->
+    <string name="app_name">Mikltea Anh Bảo Thịnh</string>
+
+    <!-- Titles -->
+    <string name="shopping_cart">Giỏ hàng</string>
+    <string name="profile">Hồ sơ</string>
+
+    <!-- Labels -->
+    <string name="admin">Quản trị viên</string>
+    <string name="user">Người dùng</string>
+    <string name="email">Email</string>
+    <string name="password">Mật khẩu</string>
+    <string name="register">Đăng Ký</string>
+    <string name="have_account">Đã có tài khoản?</string>
+    <string name="have_not_account">Chưa có tài khoản?</string>
+    <string name="login">Đăng Nhập</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+
+    <string name="change_password">Đổi mật khẩu</string>
+    <string name="reset_password">Gửi lại mật khẩu</string>
+
+    <string name="address">Địa chỉ:</string>
+    <string name="phone_number">Điện thoại:</string>
+    <string name="label_full_name">Họ và tên (*)</string>
+
+    <string name="milk_tea_image">Hình ảnh trà sữa</string>
+    <string name="add_to_cart">Thêm vào giỏ</string>
+    <string name="checkout">Thanh toán</string>
+
+    <string name="order_placed_successfully">Đặt hàng thành công!</string>
+=
+    <string name="confirm_password">Xác nhận mật khẩu</string>
+    <string name="create_account">Tạo tài khoản</string>
+    <string name="already_have_account">Đã có tài khoản?</string>
+
+    <string name="send_reset_link">Gửi liên kết đặt lại</string>
+    <string name="remember_password">Nhớ mật khẩu?</string>
+    <string name="reset_link_sent">Liên kết đặt lại mật khẩu đã được gửi</string>
+    <string name="enter_email_reset">Nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn liên kết đặt lại mật khẩu</string>
+
+    <string name="please_enter_your_email">Vui lòng nhập email của bạn</string>
+
+=
+    <string name="empty_cart">Giỏ hàng của bạn trống</string>
+    <string name="empty_products">Không có sản phẩm nào</string>
+=
+
+    <string name="unknown_item">Không rõ</string>
+    <string name="added_to_cart_title">Đã thêm vào giỏ hàng</string>
+    <string name="added_to_cart_question">Bạn có muốn chọn thêm sản phẩm không?</string>
+    <string name="added_to_cart_question_with_name">Bạn có muốn chọn thêm sản phẩm không?\n(Đã thêm: %1$s)</string>
+    <string name="action_continue_shopping">Chọn thêm</string>
+    <string name="action_go_to_cart">Đến giỏ hàng</string>
+
+    <!-- Filters -->
+    <string name="admin_title_products">Sản phẩm</string>
+    <string name="admin_title_orders">Đơn hàng</string>
+    <string name="admin_title_users">Người dùng</string>
+    <string name="admin_title_statistics">Thống kê</string>
+
+
+    <string name="decrease_quantity">Decrease quantity</string>
+    <string name="increase_quantity">Increase quantity</string>
+    <string name="logged_out_successfully">Đăng xuất thành công !</string>
+    <string name="added_to_cart_format">Thêm vào giỏ hàng</string>
+
+    <string name="unknown">Unknow</string>
+    <string name="data_not_found">Không tìm thấy dữ liệu !</string>
+    <string name="product_detail">Chi tiết sản phẩm</string>
+    <string name="logout">"Đăng xuất "</string>
+    <string name="edit_profile">Sửa thông tin</string>
+    <string name="back">Quay lại\n</string>
+    <string name="please_login_first">Hãy đăng nhập trước !</string>
+    <string name="load_failed_with_reason">Đăng nhập thất bại: %1$s</string>
+    <string name="error_fullname_required">Lỗi: Yêu cầu nhập fullname</string>
+    <string name="error_invalid_email">Lỗi: Yêu cầu nhập email !</string>
+    <string name="error_invalid_phone">Lỗi: Số điện thoại không hợp lệ !</string>
+    <string name="saved_successfully">Lưu thành công !</string>
+    <string name="save_failed_with_reason">Lưu thất bại: %1$s</string>
+    <string name="role">Vai trò</string>
+    <string name="personal_info">Thông tin cá nhân</string>
+    <string name="order_history">Lịch sử đơn hàng</string>
+    <string name="settings">Cài đặt</string>
+    <string name="admin_panel">Bảng điều khiển Admin</string>
+    <string name="orders_history">Lịch sử đơn hàng</string>
+    <string name="No_orders_yet">Chưa có đơn hàng nào</string>
+    <string name="address_book">Danh sách địa chỉ</string>
+    <string name="add_address">Thêm địa chỉ</string>
+    <string name="address_line1">Địa chỉ (Dòng 1)</string>
+    <string name="address_line2">Địa chỉ (Dòng 2)</string>
+    <string name="district">Quận/Huyện</string>
+    <string name="city">Tỉnh/Thành phố</string>
+    <string name="note">Ghi chú</string>
+    <string name="set_default">Đặt làm mặc định</string>
+    <string name="edit">Sửa</string>
+    <string name="delete">Xóa</string>
+    <string name="default_address">Địa chỉ mặc định</string>
+    <string name="no_shipping_address">Không có địa chỉ giao hàng</string>
+    <string name="save">Lưu</string>
+    <string name="edit_address">Chỉnh sửa địa chỉ</string>
+    <string name="tab_pending">Pending</string>
+    <string name="tab_finished">Finished</string>
+    <string name="tab_cancelled">Cancelled</string>
+    <string name="Intro">Trà sữa tươi mỗi ngày — chọn mức đường, đá, topping theo ý bạn!</string>
+    <string name="admin_title_management">Quản lý</string>
+    <string name="add">Thêm</string>
+</resources>

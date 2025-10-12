@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- Cốc -->
+    <path
+        android:fillColor="#F5D6A1"
+        android:pathData="M128,64h256l-32,384H160L128,64z" />
+
+    <!-- Nắp cốc -->
+    <path
+        android:fillColor="#D8B273"
+        android:pathData="M112,64h288c8.8,0,16-7.2,16-16v-16H96v16C96,56.8,103.2,64,112,64z" />
+
+    <!-- Ống hút -->
+    <path
+        android:fillColor="#A26E45"
+        android:pathData="M256,0h16c4.4,0,8,3.6,8,8v120h-32V8C248,3.6,251.6,0,256,0z" />
+
+    <!-- Trà sữa -->
+    <path
+        android:fillColor="#EFCB9C"
+        android:pathData="M160,128h192l-24,288H184L160,128z" />
+
+    <!-- Các hạt trân châu -->
+    <path
+        android:fillColor="#3B2A21"
+        android:pathData="M200,360a16,16 0 1,0 32,0a16,16 0 1,0 -32,0zM280,360a16,16 0 1,0 32,0a16,16 0 1,0 -32,0zM240,400a16,16 0 1,0 32,0a16,16 0 1,0 -32,0z" />
+
+    <!-- Viền ly -->
+    <path
+        android:strokeColor="#8B5A2B"
+        android:strokeWidth="6"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M128,64h256l-32,384H160L128,64z" />
+
+</vector>

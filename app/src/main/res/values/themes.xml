@@ -1,0 +1,59 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base application theme (bạn đang dùng MaterialComponents là OK) -->
+    <style name="Theme.MilkteaApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryVariant">@color/dark_pink</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/primary_dark</item>
+
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/black</item>
+    </style>
+
+    <!-- ✨ NEW: System Splash theme cho EntryActivity (không set layout) -->
+    <style name="Theme.MilkteaApp.Starting" parent="Theme.SplashScreen">
+        <!-- Nền splash -->
+        <item name="windowSplashScreenBackground">@color/white</item>
+        <!-- Icon hiển thị khi splash (nên để mipmap/ic_launcher hoặc round) -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
+        <!-- Sau splash, app dùng theme chính -->
+        <item name="postSplashScreenTheme">@style/Theme.MilkteaApp</item>
+    </style>
+
+    <!-- Theme không action bar cho các activity thường -->
+    <style name="Theme.MilkteaApp.NoActionBar" parent="Theme.MilkteaApp">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.MilkteaApp.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Theme.MilkteaApp.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="ButtonStyle" parent="Widget.MaterialComponents.Button">
+        <item name="android:layout_margin">8dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">24dp</item>
+    </style>
+
+    <style name="EditTextStyle" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/primary</item>
+        <item name="android:textColorHint">@color/primary</item>
+        <item name="hintTextColor">@color/primary</item>
+    </style>
+
+    <!-- ⛔ DEPRECATED: Không còn dùng theme splash tự làm -->
+    <!--
+    <style name="Theme.MilkteaApp.Splash" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">@color/primary</item>
+    </style>
+    -->
+</resources>
