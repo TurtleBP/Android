@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent" android:layout_height="?attr/actionBarSize"
+        android:title="Chi tiết đơn hàng" />
+
+    <ScrollView
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:fillViewport="true"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:orientation="vertical" android:padding="16dp"
+            android:layout_width="match_parent" android:layout_height="wrap_content">
+
+            <!-- Header -->
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvOrderId"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:textStyle="bold" android:textSize="16sp"
+                    android:text="#ORDERID"/>
+
+                <View
+                    android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
+
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="PENDING"/>
+            </LinearLayout>
+
+            <!-- Địa chỉ giao hàng -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" app:cardElevation="2dp" app:cardCornerRadius="12dp">
+
+                <LinearLayout
+                    android:orientation="vertical" android:padding="12dp"
+                    android:layout_width="match_parent" android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Địa chỉ giao hàng" android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvReceiver"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Họ tên • SĐT"/>
+
+                    <TextView
+                        android:id="@+id/tvAddressLines"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Địa chỉ gộp hiển thị"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- SẢN PHẨM TRONG ĐƠN -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" app:cardElevation="2dp" app:cardCornerRadius="12dp">
+
+                <LinearLayout
+                    android:orientation="vertical" android:padding="12dp"
+                    android:layout_width="match_parent" android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Sản phẩm" android:textStyle="bold"/>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvItems"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:layout_marginTop="6dp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Tổng cộng -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" app:cardElevation="2dp" app:cardCornerRadius="12dp">
+
+                <LinearLayout
+                    android:orientation="vertical" android:padding="12dp"
+                    android:layout_width="match_parent" android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Tổng cộng" android:textStyle="bold"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginTop="6dp">
+
+                        <TextView
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Tạm tính"/>
+                        <TextView
+                            android:id="@+id/tvSubtotal"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="0đ"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginTop="4dp">
+
+                        <TextView
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Giảm giá"/>
+                        <TextView
+                            android:id="@+id/tvDiscount"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="0đ"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginTop="4dp">
+
+                        <TextView
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Phí vận chuyển"/>
+                        <TextView
+                            android:id="@+id/tvShippingFee"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="0đ"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent" android:layout_height="1dp"
+                        android:layout_marginTop="8dp" android:background="#EEEEEE"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginTop="8dp">
+
+                        <TextView
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:textStyle="bold"
+                            android:text="Thành tiền"/>
+                        <TextView
+                            android:id="@+id/tvFinalTotal"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:textStyle="bold" android:text="0đ"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- THÔNG TIN HỦY (ẩn khi chưa hủy) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardCancelInfo"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" app:cardElevation="2dp" app:cardCornerRadius="12dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:orientation="vertical" android:padding="12dp"
+                    android:layout_width="match_parent" android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Thông tin hủy" android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvCancelReason"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="—"/>
+
+                    <TextView
+                        android:id="@+id/tvCanceledAt"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:text=""/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <ProgressBar
+                android:id="@+id/progress"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal" android:layout_marginTop="16dp"
+                android:visibility="gone"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Nút HỦY ĐƠN HÀNG -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCancelOrder"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Hủy đơn hàng"
+        android:layout_margin="16dp"
+        android:textAllCaps="false"/>
+</LinearLayout>

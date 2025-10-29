@@ -204,4 +204,17 @@ public class MainActivity extends AppCompatActivity {
             default -> 0;
         };
     }
+    public void openMessagesTab() {
+        NavigationBarView bottomNav = findViewById(R.id.bottomNavigationView);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.navigation_messages);
+        } else {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new com.pro.milkteaapp.fragment.MessagesFragment())
+                    .addToBackStack(null)
+                    .commit();
+        }
+    }
+
 }

@@ -44,6 +44,19 @@
         <item name="android:numStars">5</item>
         <item name="android:stepSize">0.5</item>
     </style>
+    <style name="AppBottomSheetDialogTheme" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/AppBottomSheetStyle</item>
+    </style>
+
+    <style name="AppBottomSheetStyle" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="shapeAppearance">@style/AppBottomSheetShape</item>
+        <item name="backgroundTint">@color/white</item>
+    </style>
+
+    <style name="AppBottomSheetShape">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
 
     <declare-styleable name="DividerView">
         <attr name="color" format="color" />

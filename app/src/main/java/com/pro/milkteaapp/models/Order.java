@@ -1,78 +1,99 @@
 package com.pro.milkteaapp.models;
 
-import com.google.firebase.Timestamp;
-import java.util.List;
-import java.util.Objects;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
-public class Order {
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentSnapshot;
+
+import java.io.Serializable;
+import java.util.Map;
+
+public class Order implements Serializable {
+
+    public static final String STATUS_PENDING    = "PENDING";
+    public static final String STATUS_FINISHED  = "FINISHED";
+    public static final String STATUS_CANCELLED  = "CANCELLED";
+
     private String id;
     private String userId;
-    private String status; // PENDING | FINISHED
-    private List<Item> items;
-    private double total;
+    private String status;
+    private double finalTotal;
+    private double subtotal;
+    private double discount;
+    private double shippingFee;
+    private String address; // chuỗi hiển thị ngắn
     private Timestamp createdAt;
-    private Timestamp confirmedAt;
-    private String confirmedBy;
-    // ...
-    private com.google.firebase.Timestamp canceledAt;
-    private String canceledBy;      // uid hoặc email
-    private String cancelReason;    // lý do (optional)
 
-    public com.google.firebase.Timestamp getCanceledAt() { return canceledAt; }
-    public String getCanceledBy() { return canceledBy; }
-    public String getCancelReason() { return cancelReason; }
-
-    public void setCanceledAt(com.google.firebase.Timestamp canceledAt) { this.canceledAt = canceledAt; }
-    public void setCanceledBy(String canceledBy) { this.canceledBy = canceledBy; }
-    public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
-// ...
-
-    public static class Item {
-        public String productId;
-        public String name;
-        public double price;
-        public int qty;
-        public String imageUrl;
-
-        public Item() {}
-    }
+    // Thông tin người nhận (trích từ addressObj nếu có)
+    private String receiverName;
+    private String receiverPhone;
+    private String addressDisplay;
 
     public Order() {}
 
-    // Getter/Setter
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    @NonNull
+    @SuppressWarnings("unchecked")
+    public static Order from(@NonNull DocumentSnapshot d) {
+        Order o = new Order();
+        o.id = d.getId();
+        o.userId = d.getString("userId");
+        o.status = d.getString("status");
 
-    public String getUserId() { return userId; }
-    public String getStatus() { return status; }
-    public List<Item> getItems() { return items; }
-    public double getTotal() { return total; }
-    public Timestamp getCreatedAt() { return createdAt; }
-    public Timestamp getConfirmedAt() { return confirmedAt; }
-    public String getConfirmedBy() { return confirmedBy; }
+        Double ft = d.getDouble("finalTotal");
+        o.finalTotal = ft == null ? 0 : ft;
 
-    public void setUserId(String userId) { this.userId = userId; }
-    public void setStatus(String status) { this.status = status; }
-    public void setItems(List<Item> items) { this.items = items; }
-    public void setTotal(double total) { this.total = total; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
-    public void setConfirmedAt(Timestamp confirmedAt) { this.confirmedAt = confirmedAt; }
-    public void setConfirmedBy(String confirmedBy) { this.confirmedBy = confirmedBy; }
+        Double st = d.getDouble("subtotal");
+        o.subtotal = st == null ? 0 : st;
 
-    @Override public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Order order)) return false;
-        return Double.compare(order.total, total) == 0 &&
-                Objects.equals(id, order.id) &&
-                Objects.equals(userId, order.userId) &&
-                Objects.equals(status, order.status) &&
-                Objects.equals(items, order.items) &&
-                Objects.equals(createdAt, order.createdAt) &&
-                Objects.equals(confirmedAt, order.confirmedAt) &&
-                Objects.equals(confirmedBy, order.confirmedBy);
+        Double dc = d.getDouble("discount");
+        o.discount = dc == null ? 0 : dc;
+
+        Double sf = d.getDouble("shippingFee");
+        o.shippingFee = sf == null ? 0 : sf;
+
+        o.address = d.getString("address");
+
+        o.createdAt = d.getTimestamp("createdAt");
+
+        Object addrObj = d.get("addressObj");
+        if (addrObj instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) addrObj;
+            Object nm = map.get("fullName");
+            Object ph = map.get("phone");
+            Object disp = map.get("display");
+            o.receiverName  = nm   == null ? "" : String.valueOf(nm);
+            o.receiverPhone = ph   == null ? "" : String.valueOf(ph);
+            o.addressDisplay= disp == null ? "" : String.valueOf(disp);
+        }
+        return o;
     }
 
-    @Override public int hashCode() {
-        return Objects.hash(id, userId, status, items, total, createdAt, confirmedAt, confirmedBy);
+    // ===== getters =====
+    @NonNull public String getId() { return id == null ? "" : id; }
+    @Nullable public String getUserId() { return userId; }
+    @Nullable public String getStatus() { return status; }
+    public double getFinalTotal() { return finalTotal; }
+    public double getTotal() { return finalTotal; }               // ✅ thêm alias cho adapter cũ
+    public double getSubtotal() { return subtotal; }
+    public double getDiscount() { return discount; }
+    public double getShippingFee() { return shippingFee; }
+    @Nullable public String getAddress() { return address; }
+    @Nullable public Timestamp getCreatedAt() { return createdAt; }
+    @NonNull public String getReceiverName() { return receiverName == null ? "" : receiverName; }
+    @NonNull public String getReceiverPhone() { return receiverPhone == null ? "" : receiverPhone; }
+    @NonNull public String getAddressDisplay() {
+        if (addressDisplay != null && !addressDisplay.isEmpty()) return addressDisplay;
+        return address == null ? "" : address;
     }
+
+    // ===== setters cho phía admin dùng khi cần tạo/ghi tạm =====
+    public void setId(@NonNull String id) { this.id = id; }      // ✅ fix AdminOrdersFragment
+    public void setStatus(@Nullable String status) { this.status = status; }
+    public void setFinalTotal(double finalTotal) { this.finalTotal = finalTotal; }
+    public void setSubtotal(double subtotal) { this.subtotal = subtotal; }
+    public void setDiscount(double discount) { this.discount = discount; }
+    public void setShippingFee(double shippingFee) { this.shippingFee = shippingFee; }
+    public void setAddress(@Nullable String address) { this.address = address; }
+    public void setCreatedAt(@Nullable Timestamp createdAt) { this.createdAt = createdAt; }
 }

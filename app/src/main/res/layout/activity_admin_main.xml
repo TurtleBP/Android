@@ -12,7 +12,7 @@
         android:background="@color/primary"
         app:title="Quản trị hệ thống"
         app:titleTextColor="@color/white"
-        app:menu="@menu/menu_admin_toolbar" />
+        app:menu="@menu/menu_admin_products" />
 
     <FrameLayout
         android:id="@+id/fragment_container"

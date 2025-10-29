@@ -5,10 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
+    <!-- Tên category -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilName"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:hint="Tên category"
+        android:hint="Tên danh mục"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -18,6 +19,23 @@
             android:layout_height="wrap_content"/>
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- URL ảnh -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilImageUrl"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:hint="Đường dẫn ảnh (URL)"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edtImageUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textUri"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Trạng thái kích hoạt -->
     <com.google.android.material.checkbox.MaterialCheckBox
         android:id="@+id/cbActive"
         android:layout_width="wrap_content"
@@ -26,6 +44,17 @@
         android:checked="true"
         android:layout_marginTop="8dp"/>
 
+    <!-- Xem trước ảnh category (load từ URL bằng Glide trong Fragment) -->
+    <ImageView
+        android:id="@+id/imgPreview"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:layout_marginTop="12dp"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/milktea" />
+
+    <!-- Hàng nút Hủy / Lưu -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -46,4 +75,5 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
     </LinearLayout>
+
 </LinearLayout>

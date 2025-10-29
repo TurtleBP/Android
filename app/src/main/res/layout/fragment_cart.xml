@@ -4,8 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white">
+    android:background="@color/background">
 
+    <!-- Toolbar -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -16,42 +17,51 @@
         app:navigationIcon="@drawable/ic_arrow_back"
         app:navigationIconTint="@color/white"/>
 
+    <!-- Danh sách giỏ hàng -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/cartRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="8dp"/>
+        android:clipToPadding="false"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:overScrollMode="ifContentScrolls"/>
 
+    <!-- Footer tổng tiền + nút thanh toán -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:background="@color/white"
-        android:elevation="8dp">
+        android:elevation="6dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Tổng cộng"
-                android:textSize="16sp"
-                android:textColor="@color/black"/>
+                android:text="@string/total"
+                android:textColor="@color/black"
+                android:textSize="16sp"/>
 
             <TextView
                 android:id="@+id/totalTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="18sp"
+                android:textColor="@color/primary"
                 android:textStyle="bold"
-                android:textColor="@color/primary"/>
+                android:textSize="18sp"/>
         </LinearLayout>
 
         <View
@@ -63,12 +73,11 @@
             android:id="@+id/checkoutButton"
             android:layout_width="match_parent"
             android:layout_height="55dp"
+            android:layout_margin="16dp"
             android:text="@string/checkout"
             android:textAllCaps="false"
             android:textSize="16sp"
-            android:layout_margin="16dp"
             app:cornerRadius="12dp"
-            android:elevation="2dp"
             app:backgroundTint="@color/primary"
             style="@style/Widget.MaterialComponents.Button"/>
     </LinearLayout>

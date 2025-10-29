@@ -13,7 +13,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- 🔹 Toolbar -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -23,7 +22,6 @@
             app:titleTextColor="@color/white"
             app:titleCentered="false"/>
 
-        <!-- 🔹 Nội dung chính -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/scrollHome"
             android:layout_width="match_parent"
@@ -38,7 +36,6 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- 🔸 Banner -->
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/vpBanner"
                     android:layout_width="match_parent"
@@ -49,7 +46,6 @@
                     android:paddingEnd="8dp"
                     android:layout_marginBottom="16dp"/>
 
-                <!-- 🔸 Giới thiệu -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -83,134 +79,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- 🔸 Danh mục gợi ý -->
-                <TextView
-                    android:id="@+id/tvCatalog"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Danh mục gợi ý"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    android:textColor="@color/black"
-                    android:layout_marginBottom="12dp"/>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:baselineAligned="false"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:weightSum="4">
-
-                    <!-- Trà Sữa -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <com.google.android.material.imageview.ShapeableImageView
-                            android:layout_width="70dp"
-                            android:layout_height="70dp"
-                            android:src="@drawable/milktea"
-                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                            app:strokeColor="@color/light_gray"
-                            app:strokeWidth="1dp"
-                            android:scaleType="centerCrop"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Trà Sữa"
-                            android:textColor="@color/black"
-                            android:textSize="13sp"
-                            android:textAlignment="center"/>
-                    </LinearLayout>
-
-                    <!-- Trà Trái Cây -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <com.google.android.material.imageview.ShapeableImageView
-                            android:layout_width="70dp"
-                            android:layout_height="70dp"
-                            android:src="@drawable/tea_blacktea"
-                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                            app:strokeColor="@color/light_gray"
-                            app:strokeWidth="1dp"
-                            android:scaleType="centerCrop"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Trà Trái Cây"
-                            android:textColor="@color/black"
-                            android:textSize="13sp"
-                            android:textAlignment="center"/>
-                    </LinearLayout>
-
-                    <!-- Kem Cheese -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <com.google.android.material.imageview.ShapeableImageView
-                            android:layout_width="70dp"
-                            android:layout_height="70dp"
-                            android:src="@drawable/milktea_cheese"
-                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                            app:strokeColor="@color/light_gray"
-                            app:strokeWidth="1dp"
-                            android:scaleType="centerCrop"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Kem Cheese"
-                            android:textColor="@color/black"
-                            android:textSize="13sp"
-                            android:textAlignment="center"/>
-                    </LinearLayout>
-
-                    <!-- Cà Phê -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <com.google.android.material.imageview.ShapeableImageView
-                            android:layout_width="70dp"
-                            android:layout_height="70dp"
-                            android:src="@drawable/tea_blacktea"
-                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                            app:strokeColor="@color/light_gray"
-                            app:strokeWidth="1dp"
-                            android:scaleType="centerCrop"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Cà Phê"
-                            android:textColor="@color/black"
-                            android:textSize="13sp"
-                            android:textAlignment="center"/>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- 🔸 Sản phẩm nổi bật -->
                 <TextView
                     android:id="@+id/tvTopPrice"
                     android:layout_width="match_parent"
@@ -228,7 +97,6 @@
                     android:overScrollMode="never"
                     android:scrollbars="none"/>
 
-                <!-- 🔸 Review khách hàng -->
                 <TextView
                     android:id="@+id/tvReviews"
                     android:layout_width="match_parent"
@@ -249,21 +117,7 @@
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
-        <!-- 🔹 Nút sản phẩm (đã có) -->
-        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/fabProduct"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Sản phẩm"
-            app:icon="@drawable/ic_milktea_cup"
-            app:iconPadding="8dp"
-            app:backgroundTint="@color/primary"
-            app:tint="@color/white"
-            app:layout_anchor="@id/scrollHome"
-            app:layout_anchorGravity="bottom|end" />
 
-        <!-- 🔹 Lottie overlay chồng lên FAB -->
         <com.airbnb.lottie.LottieAnimationView
             android:id="@+id/lavCart"
             android:layout_width="56dp"
@@ -274,15 +128,10 @@
             android:focusable="false"
             app:layout_anchor="@id/scrollHome"
             app:layout_anchorGravity="bottom|end"
-
             app:lottie_rawRes="@raw/milktea_splash"
             app:lottie_autoPlay="false"
             app:lottie_loop="false"
             app:lottie_speed="1.2"
             app:lottie_renderMode="hardware" />
-
-
-
-
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

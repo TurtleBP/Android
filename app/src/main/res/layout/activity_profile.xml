@@ -42,14 +42,27 @@
 
             <!-- Avatar -->
             <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/imgAvatar"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
                 android:layout_gravity="center"
                 android:layout_marginTop="24dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="8dp"
                 android:src="@mipmap/ic_avatar"
                 app:civ_border_width="2dp"
                 app:civ_border_color="@color/primary"/>
+
+            <!-- Nút đổi ảnh đại diện (thêm mới để khớp ProfileFragment) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChangeAvatar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/change_avatar"
+                android:textAllCaps="false"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="@color/primary"
+                android:textColor="@color/white"/>
 
             <!-- Card: Thông tin cá nhân -->
             <com.google.android.material.card.MaterialCardView
@@ -179,13 +192,13 @@
                         android:id="@+id/btnManageAddress"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Quản lý địa chỉ giao hàng"
+                        android:text="@string/manage_address"
                         android:layout_marginTop="8dp"
                         app:icon="@drawable/ic_location"
                         app:iconGravity="textStart"
                         app:iconPadding="8dp"
                         app:iconTint="@color/white"
-                        android:backgroundTint="@color/colorPrimary"
+                        android:backgroundTint="@color/primary"
                         android:textColor="@color/white"/>
 
                     <!-- Nút dành cho Admin -->

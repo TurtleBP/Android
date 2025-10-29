@@ -6,10 +6,6 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-/**
- * SessionManager: Quản lý thông tin đăng nhập, vai trò (role), và trạng thái user.
- * Thống nhất key với các Activity: "MyPrefs"
- */
 public class SessionManager {
     private static final String PREFS = "MyPrefs";
 
@@ -18,6 +14,7 @@ public class SessionManager {
     private static final String KEY_EMAIL = "email";
     private static final String KEY_NAME  = "displayName";
     private static final String KEY_LOGGED_IN = "is_logged_in";
+    private static final String KEY_AVATAR = "avatar"; // NEW
 
     private final SharedPreferences prefs;
 
@@ -31,9 +28,7 @@ public class SessionManager {
     }
 
     @Nullable
-    public String getRole() {
-        return prefs.getString(KEY_ROLE, null);
-    }
+    public String getRole() { return prefs.getString(KEY_ROLE, null); }
 
     public boolean isAdmin() {
         String r = getRole();
@@ -46,41 +41,22 @@ public class SessionManager {
     }
 
     // ===== UID / EMAIL / NAME =====
-    public void setUid(String uid) {
-        prefs.edit().putString(KEY_UID, uid).apply();
-    }
+    public void setUid(String uid) { prefs.edit().putString(KEY_UID, uid).apply(); }
+    @Nullable public String getUid() { return prefs.getString(KEY_UID, null); }
 
-    @Nullable
-    public String getUid() {
-        return prefs.getString(KEY_UID, null);
-    }
+    public void setEmail(String email) { prefs.edit().putString(KEY_EMAIL, email).apply(); }
+    @Nullable public String getEmail() { return prefs.getString(KEY_EMAIL, null); }
 
-    public void setEmail(String email) {
-        prefs.edit().putString(KEY_EMAIL, email).apply();
-    }
+    public void setDisplayName(String name) { prefs.edit().putString(KEY_NAME, name).apply(); }
+    @Nullable public String getDisplayName() { return prefs.getString(KEY_NAME, null); }
 
-    @Nullable
-    public String getEmail() {
-        return prefs.getString(KEY_EMAIL, null);
-    }
-
-    public void setDisplayName(String name) {
-        prefs.edit().putString(KEY_NAME, name).apply();
-    }
-
-    @Nullable
-    public String getDisplayName() {
-        return prefs.getString(KEY_NAME, null);
-    }
+    // ===== AVATAR =====
+    public void setAvatar(@Nullable String url) { prefs.edit().putString(KEY_AVATAR, url).apply(); }
+    @Nullable public String getAvatar() { return prefs.getString(KEY_AVATAR, null); }
 
     // ===== LOGIN STATE =====
-    public void setLoggedIn(boolean loggedIn) {
-        prefs.edit().putBoolean(KEY_LOGGED_IN, loggedIn).apply();
-    }
-
-    public boolean isLoggedIn() {
-        return prefs.getBoolean(KEY_LOGGED_IN, false);
-    }
+    public void setLoggedIn(boolean loggedIn) { prefs.edit().putBoolean(KEY_LOGGED_IN, loggedIn).apply(); }
+    public boolean isLoggedIn() { return prefs.getBoolean(KEY_LOGGED_IN, false); }
 
     // ===== COMBO SAVE USER =====
     public void saveUserSession(String uid, String email, String name, String role) {
@@ -94,9 +70,7 @@ public class SessionManager {
     }
 
     // ===== CLEAR SESSION =====
-    public void clear() {
-        prefs.edit().clear().apply();
-    }
+    public void clear() { prefs.edit().clear().apply(); }
 
     // ===== SUMMARY =====
     @NonNull
@@ -107,6 +81,7 @@ public class SessionManager {
                 ", email='" + getEmail() + '\'' +
                 ", name='" + getDisplayName() + '\'' +
                 ", role='" + getRole() + '\'' +
+                ", avatar='" + getAvatar() + '\'' +
                 ", loggedIn=" + isLoggedIn() +
                 '}';
     }

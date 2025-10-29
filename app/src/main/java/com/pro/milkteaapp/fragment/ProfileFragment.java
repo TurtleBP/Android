@@ -18,13 +18,14 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.SessionManager;
+import com.pro.milkteaapp.activity.AddressActivity;
 import com.pro.milkteaapp.activity.ChangePasswordActivity;
 import com.pro.milkteaapp.activity.EditProfileActivity;
 import com.pro.milkteaapp.activity.LoginActivity;
 import com.pro.milkteaapp.activity.OrderHistoryActivity;
 import com.pro.milkteaapp.activity.admin.AdminMainActivity;
-import com.pro.milkteaapp.activity.AddressListActivity; // màn quản lý địa chỉ giao hàng
 import com.pro.milkteaapp.databinding.ActivityProfileBinding;
+import com.pro.milkteaapp.utils.ImageLoader;
 
 public class ProfileFragment extends Fragment {
 
@@ -32,7 +33,6 @@ public class ProfileFragment extends Fragment {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private SessionManager session;
-
     private ListenerRegistration profileListener;
 
     @Nullable
@@ -42,17 +42,12 @@ public class ProfileFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         binding = ActivityProfileBinding.inflate(inflater, container, false);
 
-        // Toolbar back
+        // Toolbar back → quay lại Home tab
         binding.toolbar.setNavigationOnClickListener(v -> {
             if (isAdded() && requireActivity() instanceof com.pro.milkteaapp.activity.MainActivity) {
                 ((com.pro.milkteaapp.activity.MainActivity) requireActivity()).openHomeTab();
             }
         });
-
-        // Nhảy sang Order History
-        binding.orderHistoryLayout.setOnClickListener(
-                v -> startActivity(new Intent(requireContext(), OrderHistoryActivity.class))
-        );
 
         auth = FirebaseAuth.getInstance();
         db   = FirebaseFirestore.getInstance();
@@ -64,7 +59,10 @@ public class ProfileFragment extends Fragment {
             return binding.getRoot();
         }
 
-        // Nút cơ bản
+        // --- Nút chức năng ---
+        binding.orderHistoryLayout.setOnClickListener(
+                v -> startActivity(new Intent(requireContext(), OrderHistoryActivity.class)));
+
         binding.btnEditProfile.setOnClickListener(
                 v -> startActivity(new Intent(requireContext(), EditProfileActivity.class)));
 
@@ -81,18 +79,21 @@ public class ProfileFragment extends Fragment {
         binding.btnAdminPanel.setOnClickListener(
                 v -> startActivity(new Intent(requireContext(), AdminMainActivity.class)));
 
-        // (Tuỳ chọn) Nút quản lý địa chỉ giao hàng — KHÔNG ảnh hưởng tvAddress
-        // Chỉ để người dùng vào màn quản lý địa chỉ khi cần (checkout,...)
         binding.btnManageAddress.setOnClickListener(
-                v -> startActivity(new Intent(requireContext(), AddressListActivity.class)));
+                v -> startActivity(new Intent(requireContext(), AddressActivity.class)));
 
-        // Realtime hồ sơ: chỉ đọc từ users/{uid}
+        // Bấm ảnh hoặc nút đổi avatar → mở EditProfile
+        binding.btnChangeAvatar.setOnClickListener(
+                v -> startActivity(new Intent(requireContext(), EditProfileActivity.class)));
+        binding.imgAvatar.setOnClickListener(
+                v -> startActivity(new Intent(requireContext(), EditProfileActivity.class)));
+
         startProfileRealtime();
 
         return binding.getRoot();
     }
 
-    // ========= PROFILE (users/{uid}) =========
+    // ========= PROFILE REALTIME (users/{uid}) =========
     private void startProfileRealtime() {
         String uid = resolveUidOrGoLogin();
         if (uid == null) return;
@@ -120,14 +121,14 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    /** Chỉ bind từ document users/{uid}:
-     *  fullName, email, role, phone, address (địa chỉ hồ sơ khi đăng ký) */
+    /** Bind từ users/{uid}: fullName, email, role, phone, address, avatar */
     private void bindProfile(@Nullable DocumentSnapshot snap) {
         String fullName = "";
         String email    = "";
         String role     = session.getRole();
         String phone    = "";
-        String address  = ""; // <- chỉ lấy từ users.address
+        String address  = "";
+        String avatar   = null;
 
         if (snap != null && snap.exists()) {
             if (snap.getString("fullName") != null) fullName = snap.getString("fullName");
@@ -137,9 +138,8 @@ public class ProfileFragment extends Fragment {
                 session.setRole(role);
             }
             if (snap.getString("phone")    != null) phone    = snap.getString("phone");
-
-            // ĐỊA CHỈ HỒ SƠ (khi đăng ký) – KHÔNG dính tới địa chỉ giao hàng
             if (snap.getString("address")  != null) address  = snap.getString("address");
+            if (snap.getString("avatar")   != null) avatar   = snap.getString("avatar"); // URL hoặc tên drawable
         }
 
         binding.tvName.setText(TextUtils.isEmpty(fullName) ? getString(R.string.unknown) : fullName);
@@ -147,6 +147,9 @@ public class ProfileFragment extends Fragment {
         binding.tvRole.setText(role == null ? "user" : role);
         binding.tvPhone.setText(TextUtils.isEmpty(phone) ? getString(R.string.unknown) : phone);
         binding.tvAddress.setText(TextUtils.isEmpty(address) ? getString(R.string.unknown) : address);
+
+        // ✅ Load avatar hỗ trợ URL và drawable name
+        ImageLoader.load(binding.imgAvatar, avatar, R.drawable.ic_avatar_default);
 
         boolean isAdmin = "admin".equalsIgnoreCase(role);
         binding.btnAdminPanel.setVisibility(isAdmin ? View.VISIBLE : View.GONE);

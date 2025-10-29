@@ -40,7 +40,8 @@ public class AdminMainActivity extends AppCompatActivity {
     public static final String EXTRA_ADMIN_TARGET = "admin_tab"; // orders, users, stats, manage
 
     private static final String STATE_SELECTED_TAB = "state_selected_tab";
-    private @IdRes int currentTabId = R.id.adminManagement;
+    // ✅ Mặc định tab Đơn hàng
+    private @IdRes int currentTabId = R.id.adminOrders;
 
     private static final String TAG_ORDERS     = "tab_orders";
     private static final String TAG_USERS      = "tab_users";
@@ -80,14 +81,16 @@ public class AdminMainActivity extends AppCompatActivity {
 
     private void continueInit(@Nullable Bundle savedInstanceState) {
         if (savedInstanceState != null) {
-            currentTabId = savedInstanceState.getInt(STATE_SELECTED_TAB, R.id.adminManagement);
+            // ✅ Khôi phục, default vẫn là Orders nếu chưa có
+            currentTabId = savedInstanceState.getInt(STATE_SELECTED_TAB, R.id.adminOrders);
         }
         restoreOrCreateFragments();
 
         if (savedInstanceState == null) {
             if (!handleIntent(getIntent())) {
-                binding.bottomNavigationView.setSelectedItemId(R.id.adminManagement);
-                switchTo(R.id.adminManagement);
+                // ✅ Lần đầu vào: chọn Đơn hàng
+                binding.bottomNavigationView.setSelectedItemId(R.id.adminOrders);
+                switchTo(R.id.adminOrders);
             }
         } else {
             binding.bottomNavigationView.setSelectedItemId(currentTabId);
@@ -214,10 +217,10 @@ public class AdminMainActivity extends AppCompatActivity {
     private void updateToolbarTitle(@IdRes int menuId) {
         if (getSupportActionBar() == null) return;
         int titleRes = R.string.app_name;
-        if (menuId == R.id.adminOrders)         titleRes = R.string.admin_title_orders;
-        else if (menuId == R.id.adminUsers)     titleRes = R.string.admin_title_users;
-        else if (menuId == R.id.adminStatistics)titleRes = R.string.admin_title_statistics;
-        else if (menuId == R.id.adminManagement)titleRes = R.string.admin_title_management;
+        if (menuId == R.id.adminOrders)          titleRes = R.string.admin_title_orders;
+        else if (menuId == R.id.adminUsers)      titleRes = R.string.admin_title_users;
+        else if (menuId == R.id.adminStatistics) titleRes = R.string.admin_title_statistics;
+        else if (menuId == R.id.adminManagement) titleRes = R.string.admin_title_management;
         getSupportActionBar().setTitle(titleRes);
     }
 
@@ -227,9 +230,10 @@ public class AdminMainActivity extends AppCompatActivity {
         if (current != null && current.getChildFragmentManager().popBackStackImmediate()) {
             return;
         }
-        if (currentTabId != R.id.adminManagement) {
-            binding.bottomNavigationView.setSelectedItemId(R.id.adminManagement);
-            switchTo(R.id.adminManagement);
+        // ✅ Back về tab Đơn hàng nếu đang ở tab khác
+        if (currentTabId != R.id.adminOrders) {
+            binding.bottomNavigationView.setSelectedItemId(R.id.adminOrders);
+            switchTo(R.id.adminOrders);
         } else {
             super.onBackPressed();
         }

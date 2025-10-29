@@ -3,17 +3,22 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="12dp"
+    android:layout_height="72dp"
     android:orientation="horizontal"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="8dp"
+    android:background="?attr/selectableItemBackground">
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/categoryImage"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:scaleType="centerCrop"
-        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle" />
+        android:contentDescription="@string/app_name"
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
+        app:strokeWidth="1dp"
+        tools:src="@drawable/milktea" />
 
     <LinearLayout
         android:orientation="vertical"
@@ -21,34 +26,49 @@
         android:layout_weight="1"
         android:layout_height="wrap_content"
         android:paddingStart="12dp"
+        android:paddingEnd="8dp"
         tools:ignore="RtlSymmetry">
 
         <TextView
             android:id="@+id/categoryName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:textStyle="bold"
             android:textSize="16sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Trà sữa" />
 
         <TextView
             android:id="@+id/tvActive"
-            android:text="Active"
-            android:textSize="13sp"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_chip_neutral"
+            android:textColor="?attr/colorOnPrimary"
+            tools:text="Active" />
     </LinearLayout>
 
-    <ImageView
+    <ImageButton
         android:id="@+id/btnEdit"
-        android:src="@drawable/ic_edit"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:padding="8dp"/>
+        style="?attr/borderlessButtonStyle"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/edit"
+        app:srcCompat="@drawable/ic_edit" />
 
-    <ImageView
+    <ImageButton
         android:id="@+id/btnDelete"
-        android:src="@drawable/ic_delete"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:padding="8dp"/>
+        style="?attr/borderlessButtonStyle"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/delete"
+        app:srcCompat="@drawable/ic_delete" />
 </LinearLayout>

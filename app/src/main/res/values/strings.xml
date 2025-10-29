@@ -87,8 +87,8 @@
     <string name="No_orders_yet">Chưa có đơn hàng nào</string>
     <string name="address_book">Danh sách địa chỉ</string>
     <string name="add_address">Thêm địa chỉ</string>
-    <string name="address_line1">Địa chỉ (Dòng 1)</string>
-    <string name="address_line2">Địa chỉ (Dòng 2)</string>
+    <string name="address_line1">Số nhà/Đường</string>
+    <string name="address_line2">Xã/Phường</string>
     <string name="district">Quận/Huyện</string>
     <string name="city">Tỉnh/Thành phố</string>
     <string name="note">Ghi chú</string>
@@ -105,4 +105,33 @@
     <string name="Intro">Trà sữa tươi mỗi ngày — chọn mức đường, đá, topping theo ý bạn!</string>
     <string name="admin_title_management">Quản lý</string>
     <string name="add">Thêm</string>
+    <string name="title_edit_product">Sửa Sản Phẩm</string>
+    <string name="title_add_product">Thêm Sản Phẩm</string>
+    <string name="voucher_code">Mã giảm giá</string>
+    <string name="apply">Áp dụng</string>
+    <string name="payment_method">Phương thức thanh toán</string>
+    <string name="subtotal">Tạm tính</string>
+    <string name="discount">Giảm giá</string>
+    <string name="shipping_fee">Phí vận chuyển</string>
+    <string name="final_total">Tổng thanh toán</string>
+    <string name="confirm_order">Xác nhận đặt hàng</string>
+    <string name="invalid_voucher">Mã giảm giá không hợp lệ</string>
+    <string name="address_required">Vui lòng nhập địa chỉ (≥ 5 ký tự)</string>
+    <string name="total">Tổng Cộng:</string>
+    <string name="postal_code">Mã bưu chính</string>
+    <string name="cancel">Cancel</string>
+    <string name="use_this_address">Dùng địa chỉ này</string>
+    <string name="select_shipping_address">Chọn địa chỉ giao hàng</string>
+    <string name="no_messages_yet">Chưa có tin nhắn nào</string>
+    <string name="permission_denied">Từ chối truy cập</string>
+    <string name="upload_failed_with_reason">Upload ảnh thất bại</string>
+    <string name="change_avatar">Đổi ảnh đại diện</string>
+    <string name="manage_address">Quản lý địa chỉ giao hàng</string>
+    <string name="phone">"Số điện thoại: "</string>
+    <string name="full_name">Họ và tên:</string>
+    <string name="select_image">Chọn hình ảnh</string>
+    <string name="avatar">Ảnh đại diện</string>
+    <string name="no_ratings_yet">Chưa có đánh giá nào !</string>
+    <string name="rating_management">Quản lý Rating</string>
+
 </resources>

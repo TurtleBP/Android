@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:padding="16dp">
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Chọn gói vận chuyển" android:textStyle="bold" android:textSize="16sp"
+        android:paddingBottom="8dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFast" android:layout_width="match_parent" android:layout_height="48dp"
+        android:text="Nhanh (25.000đ)" android:textAllCaps="false"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnStandard" android:layout_width="match_parent" android:layout_height="48dp"
+        android:text="Tiêu chuẩn (15.000đ)" android:textAllCaps="false" android:layout_marginTop="8dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSaver" android:layout_width="match_parent" android:layout_height="48dp"
+        android:text="Tiết kiệm (8.000đ)" android:textAllCaps="false" android:layout_marginTop="8dp"/>
+</LinearLayout>

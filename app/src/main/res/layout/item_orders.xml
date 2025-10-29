@@ -1,63 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_margin="8dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clickable="false"
-    android:foreground="?attr/selectableItemBackground">
+    android:clickable="true"
+    android:focusable="true"
+    android:layout_marginBottom="12dp"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
 
     <LinearLayout
-        android:padding="12dp"
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/tvOrderId"
-            android:text="Order #..."
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/tvOrderStatus"
-            android:text="PENDING"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"/>
-
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/tvOrderTotal"
-            android:text="120.000₫"
-            android:textStyle="bold"
-            android:textSize="15sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"/>
-
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/tvOrderTime"
-            android:text="11:35 04/10/2025"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"/>
-        <!-- dưới tvOrderTime thêm block này -->
+        <!-- Hàng trên: mã đơn + chip trạng thái -->
         <LinearLayout
-            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="end"
-            android:layout_marginTop="8dp">
+            android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCancel"
-                android:text="Hủy đơn"
+            <TextView
+                android:id="@+id/tvOrderId"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:text="#ORDERID"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:text="Trạng thái"/>
         </LinearLayout>
 
-        <!-- Nếu muốn show items chi tiết thì thêm RecyclerView nhỏ ở đây -->
+        <!-- Ngày giờ tạo -->
+        <TextView
+            android:id="@+id/tvCreatedAt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="24 thg 10, 10:30"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp"
+            android:textColor="?android:attr/textColorSecondary"/>
+
+        <!-- Người nhận -->
+        <TextView
+            android:id="@+id/tvReceiver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nguyễn Văn A • 0901xxxxxx"
+            android:layout_marginTop="6dp"
+            android:visibility="gone"/>
+
+        <!-- Địa chỉ tóm tắt -->
+        <TextView
+            android:id="@+id/tvAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="123 Lý Thường Kiệt, P.7, Q.10, TP.HCM"
+            android:layout_marginTop="2dp"/>
+
+        <!-- Tổng tiền -->
+        <TextView
+            android:id="@+id/tvTotal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="120.000đ"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"/>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
