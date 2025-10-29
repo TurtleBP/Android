@@ -6,6 +6,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ import com.pro.milkteaapp.activity.LoginActivity;
 import com.pro.milkteaapp.activity.OrderHistoryActivity;
 import com.pro.milkteaapp.activity.admin.AdminMainActivity;
 import com.pro.milkteaapp.databinding.ActivityProfileBinding;
+import com.pro.milkteaapp.models.User;
 import com.pro.milkteaapp.utils.ImageLoader;
 
 public class ProfileFragment extends Fragment {
@@ -34,6 +36,9 @@ public class ProfileFragment extends Fragment {
     private FirebaseFirestore db;
     private SessionManager session;
     private ListenerRegistration profileListener;
+
+    private TextView textViewLoyaltyTier;
+    private TextView textViewLoyaltyPoints;
 
     @Nullable
     @Override
@@ -90,6 +95,8 @@ public class ProfileFragment extends Fragment {
 
         startProfileRealtime();
 
+        loadUserProfile();
+
         return binding.getRoot();
     }
 
@@ -113,6 +120,8 @@ public class ProfileFragment extends Fragment {
                     bindProfile(snap);
                 });
     }
+
+
 
     private void stopProfileRealtime() {
         if (profileListener != null) {
@@ -168,6 +177,32 @@ public class ProfileFragment extends Fragment {
         return uid;
     }
 
+    private void loadUserProfile() {
+        db.collection("users").document(auth.getUid()).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        User currentUser = documentSnapshot.toObject(User.class);
+
+                        if (currentUser != null) {
+                            String tier = currentUser.getLoyaltyTier();
+                            long points = currentUser.getLoyaltyPoints();
+
+                            if (tier == null || tier.isEmpty()) {
+                                tier = "Bronze"; // Mặc định nếu dữ liệu cũ chưa có
+                            }
+
+                            if (textViewLoyaltyTier != null) {
+                                textViewLoyaltyTier.setText("Hạng: " + tier);
+                            }
+                            if (textViewLoyaltyPoints != null) {
+                                textViewLoyaltyPoints.setText("Điểm tích lũy: " + points);
+                            }
+                        }
+                    }
+                });
+    }
+
+
     private void showLoading(boolean show) {
         if (binding == null) return;
         binding.progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
@@ -181,6 +216,8 @@ public class ProfileFragment extends Fragment {
         startActivity(i);
         getActivity().finish();
     }
+
+
 
     @Override
     public void onDestroyView() {

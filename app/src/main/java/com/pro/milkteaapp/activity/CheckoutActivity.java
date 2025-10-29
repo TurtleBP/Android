@@ -19,6 +19,7 @@ import com.pro.milkteaapp.models.CartItem;
 import com.pro.milkteaapp.models.CheckoutInfo;
 import com.pro.milkteaapp.models.Products;
 import com.pro.milkteaapp.models.SelectedTopping;
+import com.pro.milkteaapp.models.User;
 import com.pro.milkteaapp.utils.MoneyUtils;
 
 import java.io.Serializable;
@@ -35,6 +36,11 @@ public class CheckoutActivity extends AppCompatActivity {
     @Nullable private CheckoutInfo checkoutInfo;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+
+    private User currentUser;
+    private double subtotal; // Tổng tiền hàng
+    private double discountPercent = 0.0;
+    private double totalAmount;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -116,6 +122,49 @@ public class CheckoutActivity extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+
+    private void loadCheckoutData() {
+
+        String userId = FirebaseAuth.getInstance().getUid();
+        if (userId != null) {
+            FirebaseFirestore.getInstance().collection("users").document(userId).get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            currentUser = documentSnapshot.toObject(User.class);
+                        }
+                        calculateFinalTotal();
+                    })
+                    .addOnFailureListener(e -> {
+                        calculateFinalTotal();
+                    });
+        } else {
+            calculateFinalTotal();
+        }
+    }
+
+    private void calculateFinalTotal() {
+
+        double discountPercent = 0.0;
+        double loyaltyDiscount = 0.0;
+
+        if (currentUser != null && currentUser.getLoyaltyTier() != null) {
+            switch (currentUser.getLoyaltyTier()) {
+                case "Gold":
+                    discountPercent = 0.10;
+                    break;
+                case "Silver":
+                    discountPercent = 0.05;
+                    break;
+                default:
+                    discountPercent = 0.0;
+                    break;
+            }
+        }
+
+        loyaltyDiscount = subtotal * discountPercent;
+
+        totalAmount = subtotal - loyaltyDiscount;
     }
 
     private void setLoading(boolean loading) {
