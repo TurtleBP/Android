@@ -234,4 +234,9 @@ public class RatingManageFragment extends Fragment {
         final String avatar; // URL hoặc tên drawable
         UserBrief(String name, String avatar) { this.name = name; this.avatar = avatar; }
     }
+    @Override
+    public void onResume() {
+        super.onResume();
+        reload();
+    }
 }

@@ -245,4 +245,10 @@ public class ToppingManageFragment extends Fragment
         if (sub != null) { sub.remove(); sub = null; }
         binding = null;
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        reload();
+    }
 }
