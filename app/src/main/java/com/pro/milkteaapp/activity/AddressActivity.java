@@ -22,7 +22,6 @@ import java.util.List;
 public class AddressActivity extends AppCompatActivity
         implements AddressAdapter.Listener, AddEditAddressDialog.Listener {
 
-    private ActivityAddressBinding binding;
     private final List<Address> data = new ArrayList<>();
     private AddressAdapter adapter;
     private final AddressRepository repo = new AddressRepository();
@@ -33,7 +32,7 @@ public class AddressActivity extends AppCompatActivity
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityAddressBinding.inflate(getLayoutInflater());
+        ActivityAddressBinding binding = ActivityAddressBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         MaterialToolbar tb = binding.toolbar;
@@ -85,6 +84,7 @@ public class AddressActivity extends AppCompatActivity
     public void onSetDefault(int position) {
         if (position < 0 || position >= data.size()) return;
         Address target = data.get(position);
+        assert target.getId() != null;
         repo.setDefault(target.getId(), () -> {
             // UI sẽ tự cập nhật qua realtime listener
         }, e -> {
@@ -99,6 +99,7 @@ public class AddressActivity extends AppCompatActivity
     public void onDelete(int position) {
         if (position < 0 || position >= data.size()) return;
         Address removed = data.get(position);
+        assert removed.getId() != null;
         repo.delete(removed.getId(), () -> {
             // UI sẽ tự cập nhật qua realtime listener
         }, e -> {

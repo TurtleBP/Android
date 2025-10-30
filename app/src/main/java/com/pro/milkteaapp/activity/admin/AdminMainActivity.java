@@ -235,7 +235,7 @@ public class AdminMainActivity extends AppCompatActivity {
             binding.bottomNavigationView.setSelectedItemId(R.id.adminOrders);
             switchTo(R.id.adminOrders);
         } else {
-            super.onBackPressed();
+            super .onBackPressed();
         }
     }
 
