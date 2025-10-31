@@ -2,6 +2,7 @@ package com.pro.milkteaapp.activity;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -11,8 +12,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.WriteBatch;
 import com.pro.milkteaapp.databinding.ActivityCheckoutBinding;
 import com.pro.milkteaapp.models.CartItem;
@@ -256,6 +260,64 @@ public class CheckoutActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     setLoading(false);
                     Toast.makeText(this, "Lỗi đặt hàng: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+    }
+
+
+    private void updateLoyaltyPoints(String userId, double totalAmount) {
+        if (userId == null || userId.isEmpty() || totalAmount == 0) {
+            Log.e("LoyaltyUpdate", "Không đủ thông tin để cộng điểm.");
+            return;
+        }
+
+        // Quy tắc: 10,000 VND = 1 điểm (bạn có thể thay đổi)
+        final long pointsToAdd = (long) Math.floor(totalAmount / 10000);
+
+        if (pointsToAdd == 0) {
+            Log.d("LoyaltyUpdate", "Đơn hàng không đủ giá trị để cộng điểm.");
+            return;
+        }
+
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final DocumentReference userRef = db.collection("users").document(userId);
+
+        db.runTransaction(transaction -> {
+                    DocumentSnapshot userDoc = transaction.get(userRef);
+
+                    if (!userDoc.exists()) {
+                        throw new FirebaseFirestoreException("User không tồn tại.",
+                                FirebaseFirestoreException.Code.NOT_FOUND);
+                    }
+
+                    long currentPoints = 0;
+                    if (userDoc.contains("loyaltyPoints")) {
+                        currentPoints = userDoc.getLong("loyaltyPoints");
+                    }
+
+                    long newTotalPoints = currentPoints + pointsToAdd;
+                    String newTier = "Đồng"; // Hạng mặc định
+
+                    if (newTotalPoints >= 2000) {
+                        newTier = "Vàng";
+                    } else if (newTotalPoints >= 500) {
+                        newTier = "Bạc";
+                    } else {
+                        String currentTier = userDoc.getString("loyaltyTier");
+                        newTier = (currentTier != null) ? currentTier : "Đồng";
+                    }
+
+                    transaction.update(userRef,
+                            "loyaltyPoints", newTotalPoints,
+                            "loyaltyTier", newTier
+                    );
+
+                    return null;
+                })
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("LoyaltyUpdate", "Đã cộng thành công " + pointsToAdd + " điểm cho user " + userId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("LoyaltyUpdate", "Cộng điểm thất bại: ", e);
                 });
     }
 
