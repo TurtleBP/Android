@@ -24,6 +24,7 @@ import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.SessionManager;
+import com.pro.milkteaapp.data.UserIDGenerator;
 import com.pro.milkteaapp.models.User;
 
 import java.util.Objects;
@@ -185,19 +186,30 @@ public class RegisterActivity extends AppCompatActivity {
 
     // ========== LƯU FIRESTORE ========== //
     private void saveUserToFirestore(String uid, String fullName, String email, String phone, String address) {
-        User user = new User();
-        user.setUid(uid);
-        user.setFullName(fullName);
-        user.setEmail(email);
-        user.setPhone(phone == null ? "" : phone);
-        user.setAddress(address == null ? "" : address);
-        user.setRole("user"); // mặc định user
+        UserIDGenerator idGen = new UserIDGenerator();
+        idGen.nextUserId()
+                .addOnSuccessListener(newId -> {
+                    User user = new User();
+                    user.setUid(newId); // ✅ set uid = document ID
+                    user.setFullName(fullName);
+                    user.setEmail(email);
+                    user.setPhone(phone == null ? "" : phone);
+                    user.setAddress(address == null ? "" : address);
+                    user.setRole("user");
+                    user.setAvatar("");
 
-        db.collection("users").document(uid)
-                .set(user)
-                .addOnSuccessListener(unused -> handleRegistrationSuccess())
-                .addOnFailureListener(this::handleFirestoreError);
+                    // ✅ lưu với document ID = USRxxxxx
+                    db.collection("users").document(newId)
+                            .set(user)
+                            .addOnSuccessListener(unused -> handleRegistrationSuccess())
+                            .addOnFailureListener(this::handleFirestoreError);
+                })
+                .addOnFailureListener(e -> {
+                    setLoading(false);
+                    Toast.makeText(this, "Không thể tạo mã người dùng: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
+
 
     // ========== THÀNH CÔNG ========== //
     private void handleRegistrationSuccess() {

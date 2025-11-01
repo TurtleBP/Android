@@ -46,12 +46,13 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
 
     private FragmentProductBinding binding;
     private ProductsSectionAdapter adapter;
+    private FirebaseFirestore db;
+    private ListenerRegistration userListener;
 
     private final List<Products> allProducts = new ArrayList<>();
     private final List<String> categories = new ArrayList<>();
     private final Map<String, Integer> headerPositions = new HashMap<>();
 
-    private FirebaseFirestore db;
     private ListenerRegistration subProducts;
 
     private AppBarLayout appBar;
@@ -333,18 +334,64 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
     @SuppressLint("SetTextI18n")
     private void greetUser() {
         if (binding == null) return;
+        db = FirebaseFirestore.getInstance();
+
         SharedPreferences prefs = requireActivity().getSharedPreferences("MyPrefs", android.content.Context.MODE_PRIVATE);
         String name = prefs.getString("username", "");
         if (TextUtils.isEmpty(name)) {
             String authName = null;
             if (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null) {
                 authName = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getDisplayName();
-                if (TextUtils.isEmpty(authName)) authName = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getEmail();
+                if (TextUtils.isEmpty(authName))
+                    authName = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getEmail();
             }
             name = !TextUtils.isEmpty(authName) ? authName : "Người dùng";
         }
         binding.textGreeting.setText("Xin chào, " + name + "!");
+
+        // === NEW: hiển thị avatar thật ===
+        String uidOrDocId = new com.pro.milkteaapp.SessionManager(requireContext()).getUid();
+        if (!TextUtils.isEmpty(uidOrDocId)) {
+            listenUserAvatarRealtime(uidOrDocId);
+        } else {
+            String email = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null
+                    ? com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getEmail()
+                    : null;
+            if (!TextUtils.isEmpty(email)) {
+                db.collection("users")
+                        .whereEqualTo("email", email)
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener(qs -> {
+                            if (!qs.isEmpty()) {
+                                String docId = qs.getDocuments().get(0).getId();
+                                new com.pro.milkteaapp.SessionManager(requireContext()).setUid(docId);
+                                listenUserAvatarRealtime(docId);
+                            }
+                        });
+            }
+        }
     }
+
+    private void listenUserAvatarRealtime(@NonNull String docId) {
+        if (userListener != null) userListener.remove();
+        userListener = db.collection("users").document(docId)
+                .addSnapshotListener((snap, e) -> {
+                    if (!isAdded() || binding == null) return;
+                    if (snap != null && snap.exists()) {
+                        String avatar = snap.getString("avatar");
+                        com.pro.milkteaapp.utils.ImageLoader.load(binding.profileIcon, avatar, R.drawable.ic_avatar_default);
+                    }
+                });
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (userListener != null) userListener.remove();
+        userListener = null;
+        super.onDestroyView();
+    }
+
 
     private void setupProfileIconClickListener() {
         if (binding == null) return;
