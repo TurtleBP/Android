@@ -139,6 +139,9 @@ public class ProfileFragment extends Fragment {
         String address  = "";
         String avatar   = null;
 
+        String loyaltyTier = "Đồng";
+        long loyaltyPoints = 0;
+
         if (snap != null && snap.exists()) {
             if (snap.getString("fullName") != null) fullName = snap.getString("fullName");
             if (snap.getString("email")    != null) email    = snap.getString("email");
@@ -149,6 +152,14 @@ public class ProfileFragment extends Fragment {
             if (snap.getString("phone")    != null) phone    = snap.getString("phone");
             if (snap.getString("address")  != null) address  = snap.getString("address");
             if (snap.getString("avatar")   != null) avatar   = snap.getString("avatar"); // URL hoặc tên drawable
+
+            if (snap.getString("loyaltyTier") != null) loyaltyTier = snap.getString("loyaltyTier");
+            if (snap.contains("loyaltyPoints")) {
+                Long points = snap.getLong("loyaltyPoints");
+                if (points != null) {
+                    loyaltyPoints = points;
+                }
+            }
         }
 
         binding.tvName.setText(TextUtils.isEmpty(fullName) ? getString(R.string.unknown) : fullName);
@@ -156,6 +167,9 @@ public class ProfileFragment extends Fragment {
         binding.tvRole.setText(role == null ? "user" : role);
         binding.tvPhone.setText(TextUtils.isEmpty(phone) ? getString(R.string.unknown) : phone);
         binding.tvAddress.setText(TextUtils.isEmpty(address) ? getString(R.string.unknown) : address);
+
+        binding.tvLoyaltyTier.setText("Hạng: " + loyaltyTier);
+        binding.tvLoyaltyPoints.setText("Điểm: " + loyaltyPoints);
 
         // ✅ Load avatar hỗ trợ URL và drawable name
         ImageLoader.load(binding.imgAvatar, avatar, R.drawable.ic_avatar_default);

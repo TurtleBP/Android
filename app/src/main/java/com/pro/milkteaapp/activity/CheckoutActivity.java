@@ -245,6 +245,9 @@ public class CheckoutActivity extends AppCompatActivity {
 
         batch.commit()
                 .addOnSuccessListener(v -> {
+
+                    updateLoyaltyPoints(uid, total);
+
                     recordVoucherUsageIfNeeded(uid, voucherCode,
                             () -> {
                                 setLoading(false);
@@ -270,7 +273,7 @@ public class CheckoutActivity extends AppCompatActivity {
             return;
         }
 
-        // Quy tắc: 10,000 VND = 1 điểm (bạn có thể thay đổi)
+        // Quy tắc: 10,000 VND = 1 điểm (có thể thay đổi)
         final long pointsToAdd = (long) Math.floor(totalAmount / 10000);
 
         if (pointsToAdd == 0) {

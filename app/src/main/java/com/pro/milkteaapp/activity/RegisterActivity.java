@@ -193,6 +193,9 @@ public class RegisterActivity extends AppCompatActivity {
         user.setAddress(address == null ? "" : address);
         user.setRole("user"); // mặc định user
 
+        user.setLoyaltyTier("Đồng"); // Hạng mặc định
+        user.setLoyaltyPoints(0);      // Điểm mặc định
+
         db.collection("users").document(uid)
                 .set(user)
                 .addOnSuccessListener(unused -> handleRegistrationSuccess())
