@@ -125,7 +125,7 @@ public class ProductEditorActivity extends AppCompatActivity {
     }
 
     @SafeVarargs
-    private final <T> T firstNonNull(T... views) {
+    private <T> T firstNonNull(T... views) {
         for (T v : views) if (v != null) return v;
         return null;
     }
@@ -182,7 +182,7 @@ public class ProductEditorActivity extends AppCompatActivity {
                     etImageUrl.setText(imageUrl);
                     etDescription.setText(description);
 
-                    if (!category.isEmpty() && !containsIgnoreCase(categories, category)) {
+                    if (!category.isEmpty() && containsIgnoreCase(categories, category)) {
                         categories.add(category + " (đã ẩn)");
                         if (categoryAdapter != null) categoryAdapter.notifyDataSetChanged();
                     }
@@ -212,7 +212,7 @@ public class ProductEditorActivity extends AppCompatActivity {
         }
 
         String normalizedCat = categoryUI.replace(" (đã ẩn)", "").trim();
-        if (REQUIRE_CATEGORY_IN_LIST && !containsIgnoreCase(categories, normalizedCat)) {
+        if (REQUIRE_CATEGORY_IN_LIST && containsIgnoreCase(categories, normalizedCat)) {
             toast("Vui lòng chọn danh mục hợp lệ từ danh sách!");
             actCategory.showDropDown();
             if (btnSave != null) btnSave.setEnabled(true);
@@ -299,8 +299,8 @@ public class ProductEditorActivity extends AppCompatActivity {
     private static String ns(String s) { return s == null ? "" : s; }
 
     private static boolean containsIgnoreCase(ArrayList<String> list, String v) {
-        for (String s : list) if (s.equalsIgnoreCase(v)) return true;
-        return false;
+        for (String s : list) if (s.equalsIgnoreCase(v)) return false;
+        return true;
     }
 
     private static String formatPrice(Double price) {

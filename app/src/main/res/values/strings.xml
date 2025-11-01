@@ -7,12 +7,9 @@
     <string name="profile">Hồ sơ</string>
 
     <!-- Labels -->
-    <string name="admin">Quản trị viên</string>
-    <string name="user">Người dùng</string>
     <string name="email">Email</string>
     <string name="password">Mật khẩu</string>
     <string name="register">Đăng Ký</string>
-    <string name="have_account">Đã có tài khoản?</string>
     <string name="have_not_account">Chưa có tài khoản?</string>
     <string name="login">Đăng Nhập</string>
     <string name="forgot_password">Quên mật khẩu?</string>
@@ -29,7 +26,6 @@
     <string name="checkout">Thanh toán</string>
 
     <string name="order_placed_successfully">Đặt hàng thành công!</string>
-=
     <string name="confirm_password">Xác nhận mật khẩu</string>
     <string name="create_account">Tạo tài khoản</string>
     <string name="already_have_account">Đã có tài khoản?</string>
@@ -41,36 +37,19 @@
 
     <string name="please_enter_your_email">Vui lòng nhập email của bạn</string>
 
-=
     <string name="empty_cart">Giỏ hàng của bạn trống</string>
-    <string name="empty_products">Không có sản phẩm nào</string>
-=
 
     <string name="unknown_item">Không rõ</string>
-    <string name="added_to_cart_title">Đã thêm vào giỏ hàng</string>
-    <string name="added_to_cart_question">Bạn có muốn chọn thêm sản phẩm không?</string>
-    <string name="added_to_cart_question_with_name">Bạn có muốn chọn thêm sản phẩm không?\n(Đã thêm: %1$s)</string>
-    <string name="action_continue_shopping">Chọn thêm</string>
-    <string name="action_go_to_cart">Đến giỏ hàng</string>
 
     <!-- Filters -->
-    <string name="admin_title_products">Sản phẩm</string>
     <string name="admin_title_orders">Đơn hàng</string>
     <string name="admin_title_users">Người dùng</string>
     <string name="admin_title_statistics">Thống kê</string>
-
-
-    <string name="decrease_quantity">Decrease quantity</string>
-    <string name="increase_quantity">Increase quantity</string>
     <string name="logged_out_successfully">Đăng xuất thành công !</string>
-    <string name="added_to_cart_format">Thêm vào giỏ hàng</string>
 
     <string name="unknown">Unknow</string>
-    <string name="data_not_found">Không tìm thấy dữ liệu !</string>
-    <string name="product_detail">Chi tiết sản phẩm</string>
     <string name="logout">"Đăng xuất "</string>
     <string name="edit_profile">Sửa thông tin</string>
-    <string name="back">Quay lại\n</string>
     <string name="please_login_first">Hãy đăng nhập trước !</string>
     <string name="load_failed_with_reason">Đăng nhập thất bại: %1$s</string>
     <string name="error_fullname_required">Lỗi: Yêu cầu nhập fullname</string>
@@ -83,48 +62,32 @@
     <string name="order_history">Lịch sử đơn hàng</string>
     <string name="settings">Cài đặt</string>
     <string name="admin_panel">Bảng điều khiển Admin</string>
-    <string name="orders_history">Lịch sử đơn hàng</string>
-    <string name="No_orders_yet">Chưa có đơn hàng nào</string>
     <string name="address_book">Danh sách địa chỉ</string>
     <string name="add_address">Thêm địa chỉ</string>
     <string name="address_line1">Số nhà/Đường</string>
     <string name="address_line2">Xã/Phường</string>
     <string name="district">Quận/Huyện</string>
     <string name="city">Tỉnh/Thành phố</string>
-    <string name="note">Ghi chú</string>
-    <string name="set_default">Đặt làm mặc định</string>
     <string name="edit">Sửa</string>
     <string name="delete">Xóa</string>
-    <string name="default_address">Địa chỉ mặc định</string>
-    <string name="no_shipping_address">Không có địa chỉ giao hàng</string>
     <string name="save">Lưu</string>
     <string name="edit_address">Chỉnh sửa địa chỉ</string>
-    <string name="tab_pending">Pending</string>
-    <string name="tab_finished">Finished</string>
-    <string name="tab_cancelled">Cancelled</string>
     <string name="Intro">Trà sữa tươi mỗi ngày — chọn mức đường, đá, topping theo ý bạn!</string>
     <string name="admin_title_management">Quản lý</string>
     <string name="add">Thêm</string>
     <string name="title_edit_product">Sửa Sản Phẩm</string>
     <string name="title_add_product">Thêm Sản Phẩm</string>
     <string name="voucher_code">Mã giảm giá</string>
-    <string name="apply">Áp dụng</string>
     <string name="payment_method">Phương thức thanh toán</string>
     <string name="subtotal">Tạm tính</string>
     <string name="discount">Giảm giá</string>
     <string name="shipping_fee">Phí vận chuyển</string>
     <string name="final_total">Tổng thanh toán</string>
     <string name="confirm_order">Xác nhận đặt hàng</string>
-    <string name="invalid_voucher">Mã giảm giá không hợp lệ</string>
-    <string name="address_required">Vui lòng nhập địa chỉ (≥ 5 ký tự)</string>
     <string name="total">Tổng Cộng:</string>
     <string name="postal_code">Mã bưu chính</string>
     <string name="cancel">Cancel</string>
-    <string name="use_this_address">Dùng địa chỉ này</string>
-    <string name="select_shipping_address">Chọn địa chỉ giao hàng</string>
     <string name="no_messages_yet">Chưa có tin nhắn nào</string>
-    <string name="permission_denied">Từ chối truy cập</string>
-    <string name="upload_failed_with_reason">Upload ảnh thất bại</string>
     <string name="change_avatar">Đổi ảnh đại diện</string>
     <string name="manage_address">Quản lý địa chỉ giao hàng</string>
     <string name="phone">"Số điện thoại: "</string>
@@ -132,6 +95,5 @@
     <string name="select_image">Chọn hình ảnh</string>
     <string name="avatar">Ảnh đại diện</string>
     <string name="no_ratings_yet">Chưa có đánh giá nào !</string>
-    <string name="rating_management">Quản lý Rating</string>
 
 </resources>

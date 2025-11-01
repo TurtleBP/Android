@@ -1,5 +1,6 @@
 package com.pro.milkteaapp.adapter;
 
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,6 +41,7 @@ public class VoucherAdapter extends RecyclerView.Adapter<VoucherAdapter.VH> {
         setHasStableIds(true);
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void submit(@Nullable List<Voucher> list) {
         data.clear();
         if (list != null) data.addAll(list);
@@ -85,7 +87,7 @@ public class VoucherAdapter extends RecyclerView.Adapter<VoucherAdapter.VH> {
 
         // --- Active switch ---
         h.swActive.setOnCheckedChangeListener(null);
-        h.swActive.setChecked(Boolean.TRUE.equals(v.isActive()));
+        h.swActive.setChecked(v.isActive());
         h.swActive.setOnCheckedChangeListener((btn, checked) -> listener.onToggle(v, checked));
 
         // --- Hành động ---

@@ -68,10 +68,10 @@ public class RatingManageFragment extends Fragment {
 
             if (e != null) {
                 showEmpty(true);
-                Toast.makeText(requireContext(), "Lỗi tải: " + String.valueOf(e), Toast.LENGTH_LONG).show();
+                Toast.makeText(requireContext(), "Lỗi tải: " + e, Toast.LENGTH_LONG).show();
                 return;
             }
-            if (snap == null || snap.size() == 0) {
+            if (snap == null || snap.isEmpty()) {
                 adapter.submitList(Collections.emptyList());
                 showEmpty(true);
                 return;
@@ -189,7 +189,7 @@ public class RatingManageFragment extends Fragment {
                 })
                 .addOnFailureListener(err -> {
                     showLoading(false);
-                    Toast.makeText(requireContext(), "Lỗi xoá: " + String.valueOf(err), Toast.LENGTH_LONG).show();
+                    Toast.makeText(requireContext(), "Lỗi xoá: " + err, Toast.LENGTH_LONG).show();
                 });
     }
 
@@ -233,5 +233,10 @@ public class RatingManageFragment extends Fragment {
         final String name;
         final String avatar; // URL hoặc tên drawable
         UserBrief(String name, String avatar) { this.name = name; this.avatar = avatar; }
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+        reload();
     }
 }
