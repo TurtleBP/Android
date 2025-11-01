@@ -1,4 +1,3 @@
-// app/src/main/java/com/pro/milkteaapp/data/ProductsIdGenerator.java
 package com.pro.milkteaapp.data;
 
 import com.google.android.gms.tasks.Task;
@@ -26,16 +25,25 @@ public class ProductsIdGenerator {
         final DocumentReference ref = db.collection(META_COLLECTION).document(SEQ_DOC);
         return db.runTransaction(tr -> {
             DocumentSnapshot snap = tr.get(ref);
+
             long current = 0L;
             if (snap.exists() && snap.contains(FIELD_PRODUCT_SEQ)) {
-                Number n = snap.getDouble(FIELD_PRODUCT_SEQ);
-                if (n != null) current = n.longValue();
+                Object raw = snap.get(FIELD_PRODUCT_SEQ);
+                if (raw instanceof Number) {
+                    current = ((Number) raw).longValue();
+                }
             }
+
             long next = current + 1;
 
             Map<String, Object> updates = new HashMap<>();
-            updates.put(FIELD_PRODUCT_SEQ, (double) next); // Firestore lưu số dạng double
-            if (snap.exists()) tr.update(ref, updates); else tr.set(ref, updates);
+            updates.put(FIELD_PRODUCT_SEQ, next);
+
+            if (snap.exists()) {
+                tr.update(ref, updates);
+            } else {
+                tr.set(ref, updates);
+            }
 
             String number = String.format("%0" + width + "d", next);
             return prefix + number; // ví dụ: PRD00001

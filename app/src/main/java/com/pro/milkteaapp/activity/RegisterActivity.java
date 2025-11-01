@@ -27,8 +27,6 @@ import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.data.UserIDGenerator;
 import com.pro.milkteaapp.models.User;
 
-import java.util.Objects;
-
 public class RegisterActivity extends AppCompatActivity {
 
     private EditText fullNameEditText, emailEditText, phoneEditText, addressEditText,
@@ -39,7 +37,6 @@ public class RegisterActivity extends AppCompatActivity {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
-    // Thay ProgressDialog bằng AlertDialog custom
     private AlertDialog loadingDialog;
 
     @Override
@@ -63,7 +60,6 @@ public class RegisterActivity extends AppCompatActivity {
         registerButton          = findViewById(R.id.registerButton);
         loginTextView           = findViewById(R.id.loginTextView);
 
-        // Cho phép nhấn Done trên bàn phím để submit
         confirmPasswordEditText.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 registerButton.performClick();
@@ -82,7 +78,6 @@ public class RegisterActivity extends AppCompatActivity {
     private void setupLoadingDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = LayoutInflater.from(this);
-        // dialog_loading.xml cần tồn tại trong res/layout
         builder.setView(inflater.inflate(R.layout._dialog_loading, null));
         builder.setCancelable(false);
         loadingDialog = builder.create();
@@ -97,7 +92,6 @@ public class RegisterActivity extends AppCompatActivity {
         });
     }
 
-    // ========== ĐĂNG KÝ ========== //
     private void doRegister() {
         final String fullName        = s(fullNameEditText);
         final String email           = s(emailEditText);
@@ -109,16 +103,32 @@ public class RegisterActivity extends AppCompatActivity {
         if (!validateInputs(fullName, email, phone, password, confirmPassword)) return;
 
         setLoading(true);
+
+        // 1. tạo tài khoản Firebase Auth (để login)
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener(result -> {
-                    if (result.getUser() != null) {
-                        result.getUser().sendEmailVerification()
-                                .addOnFailureListener(e ->
-                                        Log.w("Auth", "Send verification email failed: " + e.getMessage()));
+                    if (result == null || result.getUser() == null) {
+                        setLoading(false);
+                        Toast.makeText(this, "Không tạo được tài khoản. Vui lòng thử lại.", Toast.LENGTH_LONG).show();
+                        return;
                     }
 
-                    String uid = Objects.requireNonNull(result.getUser()).getUid();
-                    saveUserToFirestore(uid, fullName, email, phone, address);
+                    // gửi mail verify (không bắt buộc)
+                    result.getUser().sendEmailVerification()
+                            .addOnFailureListener(e ->
+                                    Log.w("Auth", "Send verification email failed: " + e.getMessage()));
+
+                    // 2. sinh mã user dạng USR00001
+                    UserIDGenerator gen = new UserIDGenerator();
+                    gen.nextUserId()
+                            .addOnSuccessListener(newId -> {
+                                // 3. lưu Firestore với documentId = newId
+                                saveUserToFirestore(newId, fullName, email, phone, address);
+                            })
+                            .addOnFailureListener(e -> {
+                                setLoading(false);
+                                Toast.makeText(this, "Không tạo được mã người dùng: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            });
                 })
                 .addOnFailureListener(e -> {
                     setLoading(false);
@@ -126,7 +136,6 @@ public class RegisterActivity extends AppCompatActivity {
                 });
     }
 
-    // ========== VALIDATE ========== //
     private boolean validateInputs(String fullName, String email, String phone,
                                    String password, String confirmPassword) {
         if (TextUtils.isEmpty(fullName)) {
@@ -147,7 +156,6 @@ public class RegisterActivity extends AppCompatActivity {
             return false;
         }
 
-        // Phone có thể để trống; nếu nhập thì kiểm tra hợp lệ nhẹ
         if (!TextUtils.isEmpty(phone)) {
             String digitsOnly = phone.replaceAll("\\D+", "");
             if (digitsOnly.length() < 9 || digitsOnly.length() > 11) {
@@ -184,35 +192,36 @@ public class RegisterActivity extends AppCompatActivity {
         return true;
     }
 
-    // ========== LƯU FIRESTORE ========== //
-    private void saveUserToFirestore(String uid, String fullName, String email, String phone, String address) {
-        UserIDGenerator idGen = new UserIDGenerator();
-        idGen.nextUserId()
-                .addOnSuccessListener(newId -> {
-                    User user = new User();
-                    user.setUid(newId); // ✅ set uid = document ID
-                    user.setFullName(fullName);
-                    user.setEmail(email);
-                    user.setPhone(phone == null ? "" : phone);
-                    user.setAddress(address == null ? "" : address);
-                    user.setRole("user");
-                    user.setAvatar("");
+    private void saveUserToFirestore(String userId,
+                                     String fullName,
+                                     String email,
+                                     String phone,
+                                     String address) {
+        User user = new User();
+        user.setUid(userId); // ✅ uid = document id
+        user.setFullName(fullName);
+        user.setEmail(email);
+        user.setPhone(phone == null ? "" : phone);
+        user.setAddress(address == null ? "" : address);
+        user.setRole("user");
+        user.setAvatar("");
 
-                    // ✅ lưu với document ID = USRxxxxx
-                    db.collection("users").document(newId)
-                            .set(user)
-                            .addOnSuccessListener(unused -> handleRegistrationSuccess())
-                            .addOnFailureListener(this::handleFirestoreError);
-                })
+        db.collection("users").document(userId)
+                .set(user)
+                .addOnSuccessListener(unused -> handleRegistrationSuccess(userId))
                 .addOnFailureListener(e -> {
+                    // nếu lưu Firestore lỗi thì vẫn nên signOut để user đăng ký lại
                     setLoading(false);
-                    Toast.makeText(this, "Không thể tạo mã người dùng: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Lỗi lưu hồ sơ: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 
+    private void handleRegistrationSuccess(String userId) {
+        // lưu luôn vào session ID này để Fragment khác dùng
+        try {
+            new SessionManager(this).setUid(userId);
+        } catch (Throwable ignored) {}
 
-    // ========== THÀNH CÔNG ========== //
-    private void handleRegistrationSuccess() {
         safeSignOutAndClear();
         setLoading(false);
         Toast.makeText(this, "Đăng ký thành công! Vui lòng đăng nhập.", Toast.LENGTH_SHORT).show();
@@ -223,7 +232,6 @@ public class RegisterActivity extends AppCompatActivity {
         finish();
     }
 
-    // ========== XỬ LÝ LỖI ========== //
     private void handleRegistrationError(Exception e) {
         String msg = "Đăng ký thất bại: ";
         if (e instanceof FirebaseAuthUserCollisionException) {
@@ -239,29 +247,6 @@ public class RegisterActivity extends AppCompatActivity {
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
     }
 
-    private void handleFirestoreError(Exception e) {
-        Log.e("Firestore", "Failed to save user data", e);
-
-        if (auth.getCurrentUser() != null) {
-            auth.getCurrentUser().delete()
-                    .addOnSuccessListener(aVoid -> {
-                        safeSignOutAndClear();
-                        setLoading(false);
-                        Toast.makeText(this, "Lỗi lưu dữ liệu người dùng. Vui lòng thử lại.", Toast.LENGTH_LONG).show();
-                    })
-                    .addOnFailureListener(deleteError -> {
-                        safeSignOutAndClear();
-                        setLoading(false);
-                        Toast.makeText(this, "Lỗi hệ thống. Vui lòng liên hệ hỗ trợ.", Toast.LENGTH_LONG).show();
-                    });
-        } else {
-            safeSignOutAndClear();
-            setLoading(false);
-            Toast.makeText(this, "Lỗi lưu dữ liệu người dùng. Vui lòng thử lại.", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    // ========== TIỆN ÍCH ========== //
     private void safeSignOutAndClear() {
         try { FirebaseAuth.getInstance().signOut(); } catch (Exception ignore) {}
         try { new SessionManager(this).clear(); } catch (Throwable t) {
