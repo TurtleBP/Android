@@ -1,5 +1,6 @@
 package com.pro.milkteaapp.fragment.admin;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -25,6 +26,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.pro.milkteaapp.R;
+import com.pro.milkteaapp.activity.admin.AdminOrderDetailActivity;
 import com.pro.milkteaapp.adapter.admin.AdminOrdersAdapter;
 import com.pro.milkteaapp.models.Order;
 
@@ -49,6 +51,7 @@ public class AdminOrdersFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+
         View v = inflater.inflate(R.layout.activity_admin_orders, container, false);
 
         tabAdmin     = v.findViewById(R.id.tabAdmin);
@@ -62,6 +65,7 @@ public class AdminOrdersFragment extends Fragment {
 
         swipeRefresh.setOnRefreshListener(this::loadData);
         loadData();
+
         return v;
     }
 
@@ -73,11 +77,11 @@ public class AdminOrdersFragment extends Fragment {
         }
 
         tabAdmin.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override public void onTabSelected(TabLayout.Tab tab) {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
                 int pos = tab.getPosition();
                 currentStatus = (pos == 0) ? "PENDING" : (pos == 1) ? "FINISHED" : "CANCELLED";
 
-                // Pending: Confirm + Cancel; Finished: none; Cancelled: Delete
                 boolean isPending   = "PENDING".equalsIgnoreCase(currentStatus);
                 boolean isCancelled = "CANCELLED".equalsIgnoreCase(currentStatus);
 
@@ -86,11 +90,12 @@ public class AdminOrdersFragment extends Fragment {
                 adapter.setShowDelete(isCancelled);
 
                 recyclerView.setVisibility(View.INVISIBLE);
-                adapter.submitList(java.util.Collections.emptyList());
+                adapter.submitList(new ArrayList<>());
 
                 showLoading(true);
                 loadData();
             }
+
             @Override public void onTabUnselected(TabLayout.Tab tab) {}
             @Override public void onTabReselected(TabLayout.Tab tab) { loadData(); }
         });
@@ -98,12 +103,25 @@ public class AdminOrdersFragment extends Fragment {
 
     private void setupRecyclerView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new AdminOrdersAdapter(this::onConfirmClicked, this::onCancelClicked, this::onDeleteClicked);
+        adapter = new AdminOrdersAdapter(
+                this::onItemClicked,
+                this::onConfirmClicked,
+                this::onCancelClicked,
+                this::onDeleteClicked
+        );
         recyclerView.setItemAnimator(null);
         adapter.setStateRestorationPolicy(
                 RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         );
         recyclerView.setAdapter(adapter);
+    }
+
+    /** Click item → mở chi tiết đơn hàng dành riêng cho admin */
+    private void onItemClicked(@NonNull Order order) {
+        if (!isAdded()) return;
+        Intent i = new Intent(requireContext(), AdminOrderDetailActivity.class);
+        i.putExtra(AdminOrderDetailActivity.EXTRA_ORDER_ID, order.getId());
+        startActivity(i);
     }
 
     private void loadData() {
@@ -174,7 +192,7 @@ public class AdminOrdersFragment extends Fragment {
                 .addOnFailureListener(e -> toastLong("❌ Lỗi xác nhận: " + e.getMessage()));
     }
 
-    /** Huỷ → CANCELLED */
+    /** Huỷ → CANCELLED (ghi cả 2 dạng tên field) */
     private void onCancelClicked(@NonNull Order order) {
         if (!"PENDING".equalsIgnoreCase(currentStatus)) return;
 
@@ -192,19 +210,29 @@ public class AdminOrdersFragment extends Fragment {
 
                     Map<String, Object> updates = new HashMap<>();
                     updates.put("status", "CANCELLED");
+
+                    // dạng bạn đang dùng trong fragment
                     updates.put("cancelledAt", FieldValue.serverTimestamp());
                     updates.put("cancelledBy", admin != null ? admin.getEmail() : null);
                     if (!TextUtils.isEmpty(reason)) updates.put("cancelledReason", reason);
+
+                    // dạng màn hình user có thể đang đọc
+                    updates.put("canceledAt", FieldValue.serverTimestamp());
+                    if (!TextUtils.isEmpty(reason)) updates.put("cancelReason", reason);
 
                     FirebaseFirestore.getInstance().collection("orders")
                             .document(order.getId())
                             .update(updates)
                             .addOnSuccessListener(s -> {
                                 toast("🚫 Đã huỷ đơn #" + order.getId());
-                                writeInbox(order.getUserId(), "order_cancelled",
+                                writeInbox(
+                                        order.getUserId(),
+                                        "order_cancelled",
                                         "Đơn hàng với mã " + order.getId() + " đã bị huỷ"
                                                 + (TextUtils.isEmpty(reason) ? "" : (": " + reason)),
-                                        order.getId(), reason);
+                                        order.getId(),
+                                        reason
+                                );
                             })
                             .addOnFailureListener(e -> toastLong("❌ Lỗi huỷ: " + e.getMessage()));
                 })
@@ -244,7 +272,8 @@ public class AdminOrdersFragment extends Fragment {
     private void toast(@NonNull String m) { if (!isAdded()) return; Toast.makeText(getContext(), m, Toast.LENGTH_SHORT).show(); }
     private void toastLong(@NonNull String m) { if (!isAdded()) return; Toast.makeText(getContext(), m, Toast.LENGTH_LONG).show(); }
 
-    @Override public void onDestroyView() {
+    @Override
+    public void onDestroyView() {
         super.onDestroyView();
         if (registration != null) { registration.remove(); registration = null; }
     }
