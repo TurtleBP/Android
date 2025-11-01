@@ -1,5 +1,6 @@
 package com.pro.milkteaapp.fragment.admin.management;
 
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -13,7 +14,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.adapter.admin.AdminToppingAdapter;
 import com.pro.milkteaapp.databinding.DialogToppingEditorBinding;
 import com.pro.milkteaapp.databinding.FragmentAdminToppingsBinding;
@@ -86,6 +86,7 @@ public class ToppingManageFragment extends Fragment
                 .addOnFailureListener(e -> listenToppings());
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private void listenToppings() {
         if (sub != null) { sub.remove(); sub = null; }
         sub = db.collection("toppings")
@@ -150,6 +151,7 @@ public class ToppingManageFragment extends Fragment
     private void openEditDialog(@NonNull Topping t) { openEditor(t); }
 
     // --- Dialog create/edit ---
+    @SuppressLint("SetTextI18n")
     private void openEditor(@Nullable Topping t) {
         DialogToppingEditorBinding eb = DialogToppingEditorBinding.inflate(getLayoutInflater());
         if (t != null) {
