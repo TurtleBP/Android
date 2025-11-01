@@ -23,6 +23,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.activity.MainActivity;
+import com.pro.milkteaapp.data.ProductsIdGenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,10 +32,9 @@ import java.util.Map;
 
 /**
  * Màn hình gộp: Thêm + Sửa sản phẩm.
- * - Nếu có EXTRA_PRODUCT_ID -> Edit mode (inflate activity_edit_product)
- * - Nếu không -> Add mode (inflate activity_add_product)
- * Phiên bản này KHÔNG dùng ViewModel/Factory/Repository.
- * Toàn bộ CRUD gọi Firestore trực tiếp.
+ * - Nếu có EXTRA_PRODUCT_ID -> Edit mode
+ * - Nếu không -> Add mode
+ * CRUD gọi Firestore trực tiếp.
  */
 public class ProductEditorActivity extends AppCompatActivity {
 
@@ -139,7 +139,7 @@ public class ProductEditorActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(qs -> {
                     onCategoriesLoaded(qs);
-                    if (onDone != null) onDone.run();   // giữ luồng edit
+                    if (onDone != null) onDone.run();
                 })
                 .addOnFailureListener(e -> {
                     setLoading(false);
@@ -155,11 +155,6 @@ public class ProductEditorActivity extends AppCompatActivity {
             if (name != null && !name.trim().isEmpty()) categories.add(name.trim());
         }
         if (categoryAdapter != null) categoryAdapter.notifyDataSetChanged();
-
-        if (isEditMode && actCategory.getText() != null) {
-            String cat = actCategory.getText().toString();
-            if (!cat.isEmpty()) actCategory.setText(cat, false);
-        }
         setLoading(false);
     }
 
@@ -169,7 +164,11 @@ public class ProductEditorActivity extends AppCompatActivity {
         db.collection("products").document(id).get()
                 .addOnSuccessListener(d -> {
                     setLoading(false);
-                    if (!d.exists()) { toast("Không tìm thấy sản phẩm"); finish(); return; }
+                    if (!d.exists()) {
+                        toast("Không tìm thấy sản phẩm");
+                        finish();
+                        return;
+                    }
 
                     String name        = ns(d.getString("name"));
                     Double price       = d.getDouble("price");
@@ -182,7 +181,8 @@ public class ProductEditorActivity extends AppCompatActivity {
                     etImageUrl.setText(imageUrl);
                     etDescription.setText(description);
 
-                    if (!category.isEmpty() && containsIgnoreCase(categories, category)) {
+                    // nếu category trong db đã bị ẩn thì vẫn hiển thị để user thấy
+                    if (!category.isEmpty() && !containsIgnoreCase(categories, category)) {
                         categories.add(category + " (đã ẩn)");
                         if (categoryAdapter != null) categoryAdapter.notifyDataSetChanged();
                     }
@@ -212,7 +212,9 @@ public class ProductEditorActivity extends AppCompatActivity {
         }
 
         String normalizedCat = categoryUI.replace(" (đã ẩn)", "").trim();
-        if (REQUIRE_CATEGORY_IN_LIST && containsIgnoreCase(categories, normalizedCat)) {
+
+        // Nếu bắt buộc chọn trong list mà người dùng gõ tay -> báo lỗi
+        if (REQUIRE_CATEGORY_IN_LIST && !containsIgnoreCase(categories, normalizedCat)) {
             toast("Vui lòng chọn danh mục hợp lệ từ danh sách!");
             actCategory.showDropDown();
             if (btnSave != null) btnSave.setEnabled(true);
@@ -253,25 +255,32 @@ public class ProductEditorActivity extends AppCompatActivity {
                         if (btnSave != null) btnSave.setEnabled(true);
                     });
         } else {
-            // CREATE bằng auto-id
+            // ====== CREATE: sinh productId trước, dùng làm documentId luôn ======
             String uid = (auth.getCurrentUser() != null) ? auth.getCurrentUser().getUid() : null;
             data.put("status", "active");
             data.put("createdByUid", uid);
             data.put("createdAt", FieldValue.serverTimestamp());
 
-            db.collection("products")
-                    .add(data)
-                    .addOnSuccessListener(ref -> {
-                        // tuỳ bạn nếu muốn lưu field "id" bên trong document:
-                        ref.update("id", ref.getId());
-                        setLoading(false);
-                        toast("Đã thêm sản phẩm: " + ref.getId());
-                        setResult(RESULT_OK);
-                        finish();
+            new ProductsIdGenerator().nextProductId()
+                    .addOnSuccessListener(newId -> {
+                        // newId ví dụ: PRD00001
+                        data.put("id", newId); // lưu vào trong document để client khác đọc được
+                        db.collection("products").document(newId).set(data)
+                                .addOnSuccessListener(r -> {
+                                    setLoading(false);
+                                    toast("Đã thêm sản phẩm: " + newId);
+                                    setResult(RESULT_OK);
+                                    finish();
+                                })
+                                .addOnFailureListener(e -> {
+                                    setLoading(false);
+                                    toast("Thêm thất bại: " + e.getMessage());
+                                    if (btnSave != null) btnSave.setEnabled(true);
+                                });
                     })
                     .addOnFailureListener(e -> {
                         setLoading(false);
-                        toast("Thêm thất bại: " + e.getMessage());
+                        toast("Sinh mã sản phẩm lỗi: " + e.getMessage());
                         if (btnSave != null) btnSave.setEnabled(true);
                     });
         }
@@ -298,9 +307,12 @@ public class ProductEditorActivity extends AppCompatActivity {
     }
     private static String ns(String s) { return s == null ? "" : s; }
 
+    /** true nếu list có chứa v (bỏ qua hoa thường) */
     private static boolean containsIgnoreCase(ArrayList<String> list, String v) {
-        for (String s : list) if (s.equalsIgnoreCase(v)) return false;
-        return true;
+        for (String s : list) {
+            if (s.equalsIgnoreCase(v)) return true;
+        }
+        return false;
     }
 
     private static String formatPrice(Double price) {

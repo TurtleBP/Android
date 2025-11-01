@@ -7,7 +7,12 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.*;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -69,6 +74,9 @@ public class AdminProductsFragment extends Fragment
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private ListenerRegistration realtimeReg;
 
+    // Cờ để biết view đã được inflate chưa
+    private boolean viewInited = false;
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,7 +92,9 @@ public class AdminProductsFragment extends Fragment
 
         if (!isAdminRole) {
             Toast.makeText(requireContext(), "Bạn không có quyền truy cập (admin-only).", Toast.LENGTH_SHORT).show();
-            if (getActivity() != null) getActivity().getOnBackPressedDispatcher().onBackPressed();
+            if (getActivity() != null) {
+                getActivity().getOnBackPressedDispatcher().onBackPressed();
+            }
             return new LinearLayout(requireContext());
         }
 
@@ -94,8 +104,10 @@ public class AdminProductsFragment extends Fragment
         setupSwipeToRefresh();
         attachMenuProvider();
 
-        // Tải một lần ban đầu (tuỳ chọn)
+        // Tải một lần ban đầu
         loadOnce();
+
+        viewInited = true;
 
         return view;
     }
@@ -143,8 +155,14 @@ public class AdminProductsFragment extends Fragment
             }
             @Override
             public boolean onMenuItemSelected(@NonNull MenuItem item) {
-                if (item.getItemId() == R.id.action_sort) { showSortDialog(); return true; }
-                if (item.getItemId() == R.id.action_refresh) { refresh(); return true; }
+                if (item.getItemId() == R.id.action_sort) {
+                    showSortDialog();
+                    return true;
+                }
+                if (item.getItemId() == R.id.action_refresh) {
+                    refresh();
+                    return true;
+                }
                 return false;
             }
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
@@ -153,12 +171,18 @@ public class AdminProductsFragment extends Fragment
     // ====== Vòng đời: bật/tắt realtime ======
     @Override public void onStart() {
         super.onStart();
-        startRealtime();
+        startRealtimeIfReady();
     }
 
     @Override public void onStop() {
         super.onStop();
         stopRealtime();
+    }
+
+    private void startRealtimeIfReady() {
+        if (!isAdminRole) return;
+        if (!viewInited) return;
+        startRealtime();
     }
 
     private void startRealtime() {
@@ -187,7 +211,6 @@ public class AdminProductsFragment extends Fragment
             for (DocumentSnapshot d : snap.getDocuments()) {
                 Products p = d.toObject(Products.class);
                 if (p != null) {
-                    // đảm bảo có id để cập nhật/xoá
                     if (p.getId() == null || p.getId().trim().isEmpty()) {
                         p.setId(d.getId());
                     }
@@ -195,12 +218,15 @@ public class AdminProductsFragment extends Fragment
                 }
             }
         }
-        filterProducts(lastSearch);
+        if (adapter != null) {
+            filterProducts(lastSearch);
+        }
         showLoading(false);
     };
 
     // ====== Tải một lần (pull) ======
     private void loadOnce() {
+        if (!isAdded()) return;
         showLoading(true);
         db.collection("products").get()
                 .addOnSuccessListener(snap -> {
@@ -214,7 +240,9 @@ public class AdminProductsFragment extends Fragment
                             productList.add(p);
                         }
                     }
-                    filterProducts(lastSearch);
+                    if (adapter != null) {
+                        filterProducts(lastSearch);
+                    }
                 })
                 .addOnFailureListener(e -> toast("Lỗi tải dữ liệu: " + e.getMessage()))
                 .addOnCompleteListener(t -> showLoading(false));
@@ -241,6 +269,7 @@ public class AdminProductsFragment extends Fragment
 
     // ====== UI helpers ======
     private void filterProducts(String query) {
+        if (adapter == null) return;
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         if (q.isEmpty()) {
             adapter.updateList(productList);
@@ -260,6 +289,7 @@ public class AdminProductsFragment extends Fragment
     }
 
     private void checkEmptyState() {
+        if (adapter == null) return;
         boolean isEmpty = adapter.getItemCount() == 0;
         if (emptyState != null) emptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         if (recyclerView != null) recyclerView.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
@@ -273,10 +303,13 @@ public class AdminProductsFragment extends Fragment
     }
 
     private void showSortDialog() {
-        final String[] options = {"Mới nhất", "Cũ nhất", "Giá tăng dần", "Giá giảm dần", "Tên A-Z", "Tồn kho ít nhất"};
+        final String[] options = {
+                "Mới nhất", "Cũ nhất", "Giá tăng dần", "Giá giảm dần", "Tên A-Z", "Tồn kho ít nhất"
+        };
         new AlertDialog.Builder(requireContext())
                 .setTitle("Sắp xếp sản phẩm")
                 .setItems(options, (d, which) -> {
+                    if (adapter == null) return;
                     List<Products> current = new ArrayList<>(adapter.getCurrentList());
 
                     Comparator<Products> byPriceAsc =
@@ -288,8 +321,8 @@ public class AdminProductsFragment extends Fragment
                             Comparator.comparing(Products::getStock, Comparator.nullsLast(Integer::compare));
 
                     switch (which) {
-                        case 0: /* Mới nhất (giữ nguyên, giả sử Firestore trả newest trước) */ break;
-                        case 1: Collections.reverse(current); break; // Cũ nhất
+                        case 0: /* Mới nhất → giữ nguyên */ break;
+                        case 1: Collections.reverse(current); break;
                         case 2: current.sort(byPriceAsc); break;
                         case 3: current.sort(byPriceDesc); break;
                         case 4: current.sort(byNameAsc); break;
@@ -334,7 +367,6 @@ public class AdminProductsFragment extends Fragment
         showEditStockDialog(product);
     }
 
-    /** Dialog chỉnh tồn kho → updateProductStock(...) */
     private void showEditStockDialog(Products product) {
         if (getContext() == null || product == null) return;
 
@@ -401,18 +433,15 @@ public class AdminProductsFragment extends Fragment
         dialog.show();
     }
 
-    // ====== Interface từ Activity ======
     @Override public void scrollToTop() {
         if (recyclerView != null) recyclerView.smoothScrollToPosition(0);
     }
 
     @Override public void refresh() {
         if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-        // Có thể pull lại 1 lần cho chắc, hoặc chỉ filter lại current list
         loadOnce();
     }
 
-    // ====== Helpers ======
     private boolean isAdmin() {
         SharedPreferences p = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         return "admin".equalsIgnoreCase(p.getString("role", "user"));
@@ -432,5 +461,6 @@ public class AdminProductsFragment extends Fragment
         swipeRefresh = null;
         emptyState = null;
         progressBar = null;
+        viewInited = false;
     }
 }

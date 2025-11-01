@@ -47,9 +47,7 @@ public class MainActivity extends AppCompatActivity {
         // Reselect: ví dụ, về top nếu bấm lại tab hiện tại (tùy ý mở rộng cho các tab khác)
         binding.bottomNavigationView.setOnItemReselectedListener(item -> {
             Fragment f = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-            if (f instanceof HomeFragment) {
-                // ((HomeFragment) f).scrollToTop();
-            }
+            // ((HomeFragment) f).scrollToTop();
         });
 
         // Nếu có intent điều hướng → xử lý; ngược lại lần đầu vào chọn Home

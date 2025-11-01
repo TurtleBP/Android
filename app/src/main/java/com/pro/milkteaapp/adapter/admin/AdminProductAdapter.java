@@ -47,12 +47,10 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
         setHasStableIds(true);
     }
 
-    /** Danh sách hiện tại (copy để an toàn) */
     public List<Products> getCurrentList() {
         return new ArrayList<>(productList);
     }
 
-    /** Cập nhật với DiffUtil cho mượt */
     public void updateList(@NonNull List<Products> newList) {
         final List<Products> oldList = this.productList;
         final List<Products> newCopy = new ArrayList<>(newList);
@@ -66,9 +64,8 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
                 String oldId = safeStr(oldList.get(oldItemPosition).getId());
                 String newId = safeStr(newCopy.get(newItemPosition).getId());
                 if (!TextUtils.isEmpty(oldId) && !TextUtils.isEmpty(newId)) return oldId.equals(newId);
-                // Fallback khi thiếu id: so theo name+price
-                String ok = safeStr(oldList.get(oldItemPosition).getName()) + "_" + oldList.get(oldItemPosition).getPrice();
-                String nk = safeStr(newCopy.get(newItemPosition).getName()) + "_" + newCopy.get(newItemPosition).getPrice();
+                String ok = safeStr(oldList.get(oldItemPosition).getName()) + "_" + safeDouble(oldList.get(oldItemPosition).getPrice());
+                String nk = safeStr(newCopy.get(newItemPosition).getName()) + "_" + safeDouble(newCopy.get(newItemPosition).getPrice());
                 return ok.equals(nk);
             }
 
@@ -76,12 +73,13 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 Products o = oldList.get(oldItemPosition);
                 Products n = newCopy.get(newItemPosition);
+
                 return Objects.equals(safeStr(o.getName()), safeStr(n.getName())) &&
                         Objects.equals(safeStr(o.getCategory()), safeStr(n.getCategory())) &&
                         Objects.equals(safeStr(o.getImageUrl()), safeStr(n.getImageUrl())) &&
-                        o.getPrice() == n.getPrice() &&
-                        o.getStock() == n.getStock() &&
-                        o.getSoldCount() == n.getSoldCount();
+                        Objects.equals(o.getPrice(), n.getPrice()) &&
+                        Objects.equals(o.getStock(), n.getStock()) &&
+                        Objects.equals(o.getSoldCount(), n.getSoldCount());
             }
         });
 
@@ -94,8 +92,7 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
         if (position < 0 || position >= productList.size()) return RecyclerView.NO_ID;
         String id = productList.get(position).getId();
         if (!TextUtils.isEmpty(id)) return id.hashCode();
-        // Fallback khi thiếu id
-        String key = safeStr(productList.get(position).getName()) + "_" + productList.get(position).getPrice();
+        String key = safeStr(productList.get(position).getName()) + "_" + safeDouble(productList.get(position).getPrice());
         return key.hashCode();
     }
 
@@ -117,7 +114,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
         return productList == null ? 0 : productList.size();
     }
 
-    /** ViewHolder */
     public class ProductViewHolder extends RecyclerView.ViewHolder {
         private final TextView productName, productCategory, productPrice, productStock, productSold;
         private final ImageView productImage;
@@ -136,14 +132,12 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
         }
 
         void bind(Products p) {
-            // Text
             productName.setText(safeStr(p.getName()));
             productCategory.setText(safeStr(p.getCategory()));
             productPrice.setText(formatPrice(p.getPrice()));
-            productStock.setText(String.valueOf(p.getStock()));
-            productSold.setText(String.valueOf(p.getSoldCount()));
+            productStock.setText(String.valueOf(p.getStock() == null ? 0 : p.getStock()));
+            productSold.setText(String.valueOf(p.getSoldCount() == null ? 0 : p.getSoldCount()));
 
-            // Ảnh: tự phát hiện URL hay tên drawable
             String img = safeStr(p.getImageUrl());
             if (isHttpUrl(img)) {
                 RequestOptions opts = new RequestOptions()
@@ -161,7 +155,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
                 else productImage.setImageResource(resId);
             }
 
-            // ===== Click handlers =====
             View.OnClickListener goEdit = v -> {
                 int pos = getBindingAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
@@ -170,7 +163,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
                 if (listener != null) {
                     listener.onEditProduct(prod);
                 } else {
-                    // Fallback: mở ProductEditorActivity khi không có listener
                     Intent intent = new Intent(itemView.getContext(), ProductEditorActivity.class);
                     intent.putExtra(ProductEditorActivity.EXTRA_PRODUCT_ID, safeStr(prod.getId()));
                     itemView.getContext().startActivity(intent);
@@ -188,7 +180,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
                 });
             }
 
-            // Chỉnh tồn kho: click vào text tồn kho
             productStock.setOnClickListener(v -> {
                 int pos = getBindingAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
@@ -202,7 +193,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
         }
     }
 
-    // ===== Helpers =====
     private static String safeStr(String s) { return s == null ? "" : s; }
     private static double safeDouble(Double d){ return d == null ? 0d : d; }
     private static boolean isHttpUrl(String s) {

@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -42,7 +43,7 @@ public class ProfileFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         binding = ActivityProfileBinding.inflate(inflater, container, false);
 
-        // Toolbar back → quay lại Home tab
+        // back về Home tab
         binding.toolbar.setNavigationOnClickListener(v -> {
             if (isAdded() && requireActivity() instanceof com.pro.milkteaapp.activity.MainActivity) {
                 ((com.pro.milkteaapp.activity.MainActivity) requireActivity()).openHomeTab();
@@ -53,13 +54,13 @@ public class ProfileFragment extends Fragment {
         db   = FirebaseFirestore.getInstance();
         session = new SessionManager(requireContext());
 
-        // Nếu chưa đăng nhập → về Login
+        // chưa đăng nhập → về login
         if (auth.getCurrentUser() == null) {
             gotoLogin();
             return binding.getRoot();
         }
 
-        // --- Nút chức năng ---
+        // ====== nút chức năng ======
         binding.orderHistoryLayout.setOnClickListener(
                 v -> startActivity(new Intent(requireContext(), OrderHistoryActivity.class)));
 
@@ -82,7 +83,6 @@ public class ProfileFragment extends Fragment {
         binding.btnManageAddress.setOnClickListener(
                 v -> startActivity(new Intent(requireContext(), AddressActivity.class)));
 
-        // Bấm ảnh hoặc nút đổi avatar → mở EditProfile
         binding.btnChangeAvatar.setOnClickListener(
                 v -> startActivity(new Intent(requireContext(), EditProfileActivity.class)));
         binding.imgAvatar.setOnClickListener(
@@ -93,19 +93,64 @@ public class ProfileFragment extends Fragment {
         return binding.getRoot();
     }
 
-    // ========= PROFILE REALTIME (users/{uid}) =========
+    // ================== LOAD REALTIME ==================
     private void startProfileRealtime() {
-        String uid = resolveUidOrGoLogin();
-        if (uid == null) return;
+        FirebaseUser fUser = auth.getCurrentUser();
+        if (fUser == null) {
+            gotoLogin();
+            return;
+        }
 
         showLoading(true);
         stopProfileRealtime();
 
-        profileListener = db.collection("users").document(uid)
+        // 1. ưu tiên docID đã lưu (USRxxxxx)
+        String docId = session.getUid();
+        if (!TextUtils.isEmpty(docId)) {
+            profileListener = listenUserDoc(docId);
+            return;
+        }
+
+        // 2. chưa có → query theo email
+        String email = fUser.getEmail();
+        if (!TextUtils.isEmpty(email)) {
+            db.collection("users")
+                    .whereEqualTo("email", email)
+                    .limit(1)
+                    .get()
+                    .addOnSuccessListener(qs -> {
+                        showLoading(false);
+                        if (!qs.isEmpty()) {
+                            DocumentSnapshot doc = qs.getDocuments().get(0);
+                            // lưu full vào session (quan trọng!)
+                            session.saveUserFromFirestore(
+                                    doc.getId(),
+                                    doc.getString("email"),
+                                    doc.getString("fullName"),
+                                    doc.getString("role"),
+                                    doc.getString("avatar")
+                            );
+                            bindProfile(doc);
+                            profileListener = listenUserDoc(doc.getId());
+                        } else {
+                            Toast.makeText(requireContext(), "Chưa có hồ sơ người dùng.", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        showLoading(false);
+                        Toast.makeText(requireContext(), "Lỗi tải hồ sơ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            // 3. fallback: dùng UID firebase (cho user cũ – docId = uid firebase)
+            profileListener = listenUserDoc(fUser.getUid());
+        }
+    }
+
+    private ListenerRegistration listenUserDoc(@NonNull String docId) {
+        return db.collection("users").document(docId)
                 .addSnapshotListener((snap, e) -> {
                     if (!isAdded()) return;
                     showLoading(false);
-
                     if (e != null) {
                         Toast.makeText(requireContext(), "Lỗi tải hồ sơ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         return;
@@ -121,7 +166,7 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    /** Bind từ users/{uid}: fullName, email, role, phone, address, avatar */
+    // ================== BIND UI ==================
     private void bindProfile(@Nullable DocumentSnapshot snap) {
         String fullName = "";
         String email    = "";
@@ -135,39 +180,35 @@ public class ProfileFragment extends Fragment {
             if (snap.getString("email")    != null) email    = snap.getString("email");
             if (snap.getString("role")     != null) {
                 role = snap.getString("role");
-                session.setRole(role);
             }
             if (snap.getString("phone")    != null) phone    = snap.getString("phone");
             if (snap.getString("address")  != null) address  = snap.getString("address");
-            if (snap.getString("avatar")   != null) avatar   = snap.getString("avatar"); // URL hoặc tên drawable
+            if (snap.getString("avatar")   != null) avatar   = snap.getString("avatar");
+
+            // ✅ đồng bộ lại session đầy đủ luôn (để ProductFragment/adapter khác xài)
+            session.saveUserFromFirestore(
+                    snap.getId(),
+                    email,
+                    fullName,
+                    role,
+                    avatar
+            );
         }
 
+        // set UI
         binding.tvName.setText(TextUtils.isEmpty(fullName) ? getString(R.string.unknown) : fullName);
         binding.tvEmail.setText(TextUtils.isEmpty(email) ? getString(R.string.unknown) : email);
         binding.tvRole.setText(role == null ? "user" : role);
         binding.tvPhone.setText(TextUtils.isEmpty(phone) ? getString(R.string.unknown) : phone);
         binding.tvAddress.setText(TextUtils.isEmpty(address) ? getString(R.string.unknown) : address);
 
-        // ✅ Load avatar hỗ trợ URL và drawable name
         ImageLoader.load(binding.imgAvatar, avatar, R.drawable.ic_avatar_default);
 
         boolean isAdmin = "admin".equalsIgnoreCase(role);
         binding.btnAdminPanel.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
     }
 
-    // ========= COMMON =========
-    private String resolveUidOrGoLogin() {
-        String uid = session.getUid();
-        if (uid == null && auth.getCurrentUser() != null) {
-            uid = auth.getCurrentUser().getUid();
-            session.setUid(uid);
-        }
-        if (uid == null) {
-            gotoLogin();
-        }
-        return uid;
-    }
-
+    // ================== COMMON ==================
     private void showLoading(boolean show) {
         if (binding == null) return;
         binding.progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
