@@ -5,18 +5,22 @@
     android:layout_height="wrap_content"
     android:layout_columnWeight="1"
     android:layout_rowWeight="1"
+    android:gravity="center"
     android:padding="12dp"
-    android:layout_margin="4dp"
+    android:layout_margin="6dp"
     android:background="@drawable/bg_kpi_card">
 
+    <!-- Tiêu đề KPI -->
     <TextView
         android:id="@+id/tvKpiTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="KPI"
-        android:textSize="12sp"
-        android:textColor="@color/gray_600" />
+        android:text="Tiêu đề KPI"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="@color/gray_700" />
 
+    <!-- Giá trị KPI -->
     <TextView
         android:id="@+id/tvKpiValue"
         android:layout_width="wrap_content"
@@ -26,4 +30,5 @@
         android:textSize="20sp"
         android:textColor="@color/black"
         android:layout_marginTop="6dp" />
+
 </LinearLayout>
