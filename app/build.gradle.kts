@@ -82,6 +82,8 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
 
     implementation("com.airbnb.android:lottie:6.6.10")
+    // Thêm thư viện Google Pay
+    implementation("com.google.android.gms:play-services-wallet:19.4.0")
 }
 
 java {

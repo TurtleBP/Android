@@ -115,11 +115,30 @@
         android:padding="16dp"
         android:orientation="vertical">
 
+        <RelativeLayout
+            android:id="@+id/googlePayButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@android:color/black"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
+            android:visibility="gone"> <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Thanh toán bằng Google Pay"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
+        </RelativeLayout>
+
+
         <Button
             android:id="@+id/btnPlaceOrder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Đặt hàng"
+            android:layout_marginTop="8dp"
+            android:text="Thanh toán khi nhận hàng(COD)"
             android:textAllCaps="false" />
 
         <ProgressBar

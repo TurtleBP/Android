@@ -124,5 +124,8 @@
             android:name=".service.NotificationService"
             android:enabled="true"
             android:exported="false" />
+        <meta-data
+            android:name="com.google.android.gms.wallet.api.enabled"
+            android:value="true" />
     </application>
 </manifest>

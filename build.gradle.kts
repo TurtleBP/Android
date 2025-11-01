@@ -5,7 +5,7 @@ buildscript {
         maven(url = "https://jitpack.io")
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.12.3")
+        classpath("com.android.tools.build:gradle:8.13.0")
         classpath ("com.google.gms:google-services:4.4.3")
     }
 }

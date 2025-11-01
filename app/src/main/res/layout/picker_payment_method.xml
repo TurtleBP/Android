@@ -10,12 +10,12 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCOD" android:layout_width="match_parent" android:layout_height="48dp"
         android:text="COD (Thanh toán khi nhận)" android:textAllCaps="false"/>
-
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnVNPAY" android:layout_width="match_parent" android:layout_height="48dp"
-        android:text="VNPAY" android:textAllCaps="false" android:layout_marginTop="8dp"/>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnMomo" android:layout_width="match_parent" android:layout_height="48dp"
-        android:text="Momo" android:textAllCaps="false" android:layout_marginTop="8dp"/>
+        android:id="@+id/btnGooglePay"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Google Pay"
+        android:textAllCaps="false"
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
 </LinearLayout>

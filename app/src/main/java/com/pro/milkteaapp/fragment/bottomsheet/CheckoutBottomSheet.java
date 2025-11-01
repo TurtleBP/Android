@@ -11,9 +11,22 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+// === IMPORT CỦA GOOGLE PAY ===
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.wallet.IsReadyToPayRequest;
+import com.google.android.gms.wallet.PaymentsClient;
+import com.google.android.gms.wallet.Wallet;
+import com.google.android.gms.wallet.WalletConstants;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.util.Optional;
+// =============================
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.pro.milkteaapp.adapter.CheckoutItemAdapter;
-import com.pro.milkteaapp.databinding.CheckoutBottomSheetBinding;
+import com.pro.milkteaapp.databinding.CheckoutBottomSheetBinding; // Đảm bảo tên file binding chính xác
 import com.pro.milkteaapp.fragment.pickersheet.AddressPickerSheet;
 import com.pro.milkteaapp.fragment.pickersheet.PaymentMethodPickerSheet;
 import com.pro.milkteaapp.fragment.pickersheet.ShippingPickerSheet;
@@ -58,6 +71,11 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
     private String shippingLabel = "Tiêu chuẩn (15.000đ)";
     private long shippingFee = 15_000L;
 
+    // === BIẾN MỚI CHO GOOGLE PAY ===
+    private PaymentsClient paymentsClient;
+    private boolean isGooglePayReady = false; // Lưu trạng thái Google Pay
+    // =============================
+
     public void setOnCheckoutConfirmListener(OnCheckoutConfirmListener l) {
         this.listener = l;
     }
@@ -73,6 +91,17 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onViewCreated(@NonNull View v, @Nullable Bundle s) {
         super.onViewCreated(v, s);
+
+        // === FIX LỖI: VÔ HIỆU HÓA HÀNG THANH TOÁN TẠM THỜI ===
+        b.rowPayment.setEnabled(false);
+        setText(b.tvPaymentValue, "Đang tải..."); // Hiển thị trạng thái loading
+        // =================================================
+
+        // === KHỞI TẠO GOOGLE PAY ===
+        // Kiểm tra readiness ở đây, vì đây là màn hình chọn
+        paymentsClient = createPaymentsClient();
+        checkGooglePayReadiness();
+        // ========================
 
         // Nhận danh sách item
         if (getArguments() != null) {
@@ -102,16 +131,19 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
             sheet.show(getParentFragmentManager(), "AddressPicker");
         });
 
-        // Chọn phương thức thanh toán
+        // === CLICK LISTENER CỦA ROW PAYMENT (giữ nguyên) ===
         b.rowPayment.setOnClickListener(v12 -> {
-            PaymentMethodPickerSheet sheet = new PaymentMethodPickerSheet();
+            // Mở picker và truyền trạng thái Google Pay vào
+            // Lúc này, isGooglePayReady đã có giá trị đúng vì row đã được enable
+            PaymentMethodPickerSheet sheet = PaymentMethodPickerSheet.newInstance(isGooglePayReady);
             sheet.setListener(pm -> {
                 paymentMethod = pm;
                 setText(b.tvPaymentValue, pm);
-                updateSummaryUI();
+                updateSummaryUI(); // Cập nhật UI ngay khi chọn
             });
             sheet.show(getParentFragmentManager(), "PaymentPicker");
         });
+        // ==========================================
 
         // Chọn voucher từ danh sách hợp lệ
         b.rowVoucher.setOnClickListener(v13 -> {
@@ -163,7 +195,7 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
     private long calcSubtotal() {
         long subtotal = 0L;
         for (CartItem it : items) {
-            subtotal += (long) (it.getUnitPrice() * it.getQuantity());
+            subtotal += it.getTotalPrice(); // Sử dụng getTotalPrice() cho nhất quán
         }
         return subtotal;
     }
@@ -178,17 +210,22 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
             shipDisc = r.shippingDiscount;
         }
         long discount = orderDisc + shipDisc;
-        long total = Math.max(0L, subtotal - discount + shippingFee);
+        long finalShippingFee = Math.max(0L, shippingFee - shipDisc);
+        long total = Math.max(0L, subtotal - orderDisc + finalShippingFee);
 
         b.tvSubtotal.setText(MoneyUtils.formatVnd(subtotal));
         b.tvDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(discount)));
-        b.tvShipping.setText(MoneyUtils.formatVnd(shippingFee));
+        b.tvShipping.setText(MoneyUtils.formatVnd(finalShippingFee));
         b.tvFinal.setText(MoneyUtils.formatVnd(total));
 
         if (selectedAddress != null) setText(b.tvAddressValue, selectedAddress.displayLine());
         setText(b.tvVoucherValue, voucherCode.isEmpty() ? "Không áp dụng" : voucherCode);
         setText(b.tvShippingValue, shippingLabel);
-        setText(b.tvPaymentValue, paymentMethod);
+
+        // CHỈ cập nhật text "Phương thức thanh toán" nếu nó KHÔNG đang tải
+        if (b.rowPayment.isEnabled()) {
+            setText(b.tvPaymentValue, paymentMethod);
+        }
     }
 
     private CheckoutInfo buildInfo() {
@@ -201,7 +238,8 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
             shipDisc = r.shippingDiscount;
         }
         long discount = orderDisc + shipDisc;
-        long total = Math.max(0L, subtotal - discount + shippingFee);
+        long finalShippingFee = Math.max(0L, shippingFee - shipDisc);
+        long total = Math.max(0L, subtotal - orderDisc + finalShippingFee);
 
         String addressString = selectedAddress != null ? selectedAddress.displayLine() : "";
 
@@ -213,7 +251,7 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
                 shippingLabel,
                 subtotal,
                 discount,
-                shippingFee,
+                finalShippingFee,
                 total
         );
     }
@@ -226,5 +264,103 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
 
     private static String safe(String s) {
         return s == null ? "" : s;
+    }
+
+    // ======================================================
+    // === CÁC HÀM CỦA GOOGLE PAY (ĐỂ KIỂM TRA READINESS) ===
+    // ======================================================
+
+    private PaymentsClient createPaymentsClient() {
+        Wallet.WalletOptions walletOptions = new Wallet.WalletOptions.Builder()
+                .setEnvironment(WalletConstants.ENVIRONMENT_TEST)
+                .build();
+        return Wallet.getPaymentsClient(requireActivity(), walletOptions);
+    }
+
+    /**
+     * Sửa lại hàm checkGooglePayReadiness để kích hoạt lại row sau khi hoàn tất
+     */
+    private void checkGooglePayReadiness() {
+        final Optional<JSONObject> isReadyToPayJson = getGooglePayIsReadyToPayRequest();
+        if (!isReadyToPayJson.isPresent()) {
+            // Nếu lỗi ngay lập tức, kích hoạt lại row
+            if (b != null) {
+                b.rowPayment.setEnabled(true);
+                setText(b.tvPaymentValue, paymentMethod); // Hiển thị text "COD"
+            }
+            return;
+        }
+        IsReadyToPayRequest request = IsReadyToPayRequest.fromJson(isReadyToPayJson.get().toString());
+        Task<Boolean> task = paymentsClient.isReadyToPay(request);
+
+        // Chạy trên Main Thread của Activity
+        task.addOnCompleteListener(requireActivity(), taskResult -> {
+            try {
+                if (taskResult.isSuccessful()) {
+                    setGooglePayAvailable(true);
+                } else {
+                    setGooglePayAvailable(false);
+                }
+            } catch (Exception e) {
+                setGooglePayAvailable(false);
+            }
+
+            // === FIX LỖI: KÍCH HOẠT LẠI ROW THANH TOÁN ===
+            // Dù thành công hay thất bại, kích hoạt lại row
+            if (b != null) { // Đảm bảo view chưa bị destroy
+                b.rowPayment.setEnabled(true);
+                // Cập nhật text, isGooglePayReady đã được set
+                setText(b.tvPaymentValue, paymentMethod);
+            }
+            // ==========================================
+        });
+    }
+
+    private void setGooglePayAvailable(boolean available) {
+        this.isGooglePayReady = available;
+    }
+
+    // --- CÁC HÀM TIỆN ÍCH JSON (CHO READINESS) ---
+
+    private static JSONObject getBaseRequest() throws JSONException {
+        return new JSONObject()
+                .put("apiVersion", 2)
+                .put("apiVersionMinor", 0);
+    }
+
+    private static JSONObject getGatewayTokenizationSpecification() throws JSONException {
+        return new JSONObject()
+                .put("type", "PAYMENT_GATEWAY")
+                .put("parameters", new JSONObject()
+                        .put("gateway", "example")
+                        .put("gatewayMerchantId", "exampleGatewayMerchantId"));
+    }
+
+    private static JSONArray getAllowedPaymentMethods() throws JSONException {
+        JSONObject cardPaymentMethod = new JSONObject()
+                .put("type", "CARD")
+                .put("parameters", new JSONObject()
+                        .put("allowedAuthMethods", new JSONArray()
+                                .put("PAN_ONLY")
+                                .put("CRYPTOGRAM_3DS"))
+                        .put("allowedCardNetworks", new JSONArray()
+                                .put("AMEX")
+                                .put("DISCOVER")
+                                .put("JCB")
+                                .put("MASTERCARD")
+                                .put("VISA")))
+                .put("tokenizationSpecification", getGatewayTokenizationSpecification());
+
+        return new JSONArray().put(cardPaymentMethod);
+    }
+
+    public static Optional<JSONObject> getGooglePayIsReadyToPayRequest() {
+        try {
+            JSONObject isReadyToPayRequest = getBaseRequest();
+            isReadyToPayRequest.put("allowedPaymentMethods", getAllowedPaymentMethods());
+            return Optional.of(isReadyToPayRequest);
+        } catch (JSONException e) {
+            return Optional.empty();
+        }
     }
 }
