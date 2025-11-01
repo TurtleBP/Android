@@ -49,11 +49,4 @@
         <item name="hintTextColor">@color/primary</item>
     </style>
 
-    <!-- ⛔ DEPRECATED: Không còn dùng theme splash tự làm -->
-    <!--
-    <style name="Theme.MilkteaApp.Splash" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="android:statusBarColor">@color/primary</item>
-    </style>
-    -->
 </resources>

@@ -17,14 +17,11 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.bumptech.glide.Glide;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FieldValue;
@@ -37,6 +34,7 @@ import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.adapter.CategoryAdapter;
 import com.pro.milkteaapp.handler.AddActionHandler;
 import com.pro.milkteaapp.models.Category;
+import com.pro.milkteaapp.utils.ImageLoader;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,7 +68,8 @@ public class CategoryManageFragment extends Fragment implements
     private CategoryAdapter adapter;
     private final List<Category> list = new ArrayList<>();
 
-    public CategoryManageFragment() {}
+    public CategoryManageFragment() {
+    }
 
     @Nullable
     @Override
@@ -86,12 +85,12 @@ public class CategoryManageFragment extends Fragment implements
 
         // bind views
         recyclerView = v.findViewById(R.id.recyclerViewCategories);
-        progressBar  = v.findViewById(R.id.progressBar);
+        progressBar = v.findViewById(R.id.progressBar);
         swipeRefresh = v.findViewById(R.id.swipeRefresh);
-        emptyState   = v.findViewById(R.id.emptyState);
-        fabAdd       = v.findViewById(R.id.fabAdd);
-        edtSearch    = v.findViewById(R.id.edtSearch);
-        btnAddFirst  = v.findViewById(R.id.btnAddFirst);
+        emptyState = v.findViewById(R.id.emptyState);
+        fabAdd = v.findViewById(R.id.fabAdd);
+        edtSearch = v.findViewById(R.id.edtSearch);
+        btnAddFirst = v.findViewById(R.id.btnAddFirst);
 
         // adapter (admin mode = true)
         adapter = new CategoryAdapter(this, true);
@@ -111,8 +110,14 @@ public class CategoryManageFragment extends Fragment implements
         // search
         if (edtSearch != null) {
             edtSearch.addTextChangedListener(new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                @Override public void afterTextChanged(Editable s) {}
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
+
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     applyFilter(s == null ? "" : s.toString().trim().toLowerCase(Locale.ROOT));
@@ -125,8 +130,7 @@ public class CategoryManageFragment extends Fragment implements
     }
 
     /**
-     * Nghe realtime tất cả danh mục (giống vm.listenAll())
-     * Sort theo createdAt DESC, nếu doc cũ không có createdAt thì vẫn add vô
+     * Nghe realtime tất cả danh mục
      */
     private void listenCategoriesRealtime() {
         showLoading(true);
@@ -207,12 +211,14 @@ public class CategoryManageFragment extends Fragment implements
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout._dialog_category, null);
 
-        TextInputEditText edtName     = dialogView.findViewById(R.id.edtName);
+        TextInputEditText edtName = dialogView.findViewById(R.id.edtName);
         TextInputEditText edtImageUrl = dialogView.findViewById(R.id.edtImageUrl);
-        ImageView imgPreview          = dialogView.findViewById(R.id.imgPreview);
-        MaterialCheckBox cbActive     = dialogView.findViewById(R.id.cbActive);
-        Button btnSave                = dialogView.findViewById(R.id.btnSave);
-        Button btnCancel              = dialogView.findViewById(R.id.btnCancel);
+        ImageView imgPreview = dialogView.findViewById(R.id.imgPreview);
+        MaterialCheckBox cbActive = dialogView.findViewById(R.id.cbActive);
+        Button btnSave = dialogView.findViewById(R.id.btnSave);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        // nút mới
+        Button btnPickBuiltinImage = dialogView.findViewById(R.id.btnPickBuiltinImage);
 
         // nếu sửa
         if (category != null) {
@@ -220,30 +226,78 @@ public class CategoryManageFragment extends Fragment implements
             if (edtImageUrl != null) edtImageUrl.setText(category.getImageUrl());
             if (cbActive != null) cbActive.setChecked(category.isActive());
 
-            Glide.with(requireContext())
-                    .load(category.getImageUrl())
-                    .placeholder(R.drawable.milktea)
-                    .error(R.drawable.milktea)
-                    .into(imgPreview);
+            // dùng ImageLoader để support cả url và tên drawable
+            ImageLoader.load(
+                    imgPreview,
+                    category.getImageUrl(),
+                    R.drawable.milktea
+            );
+        } else {
+            imgPreview.setImageResource(R.drawable.milktea);
+            if (cbActive != null) cbActive.setChecked(true);
         }
 
-        // preview ảnh
+        // preview ảnh khi gõ
         if (edtImageUrl != null) {
             edtImageUrl.addTextChangedListener(new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                @Override public void afterTextChanged(Editable s) {}
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
+
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    String url = s == null ? "" : s.toString().trim();
-                    if (!url.isEmpty()) {
-                        Glide.with(requireContext()).load(url)
-                                .placeholder(R.drawable.milktea)
-                                .error(R.drawable.milktea)
-                                .into(imgPreview);
-                    } else {
+                    String val = s == null ? "" : s.toString().trim();
+                    if (val.isEmpty()) {
                         imgPreview.setImageResource(R.drawable.milktea);
+                    } else {
+                        ImageLoader.load(
+                                imgPreview,
+                                val,
+                                R.drawable.milktea
+                        );
                     }
                 }
+            });
+        }
+
+        // ====== PICK ẢNH CÓ SẴN (giống edit profile) ======
+        if (btnPickBuiltinImage != null) {
+            btnPickBuiltinImage.setOnClickListener(v -> {
+                // mảng ảnh demo – anh có thể nối thêm tùy ý
+                final String[] CATE_IMAGES = new String[]{
+                        "milktea_brownsugar",
+                        "milktea_matcha",
+                        "milktea_taro",
+                        "milktea_olong",
+                        "milktea_greenthai",
+                        "milktea_strawberry",
+                        "milktea_chocolate",
+                        "milktea_caramel",
+                        "milktea_mango",
+                        "tea_blacktea",
+                        "ic_milk_tea",
+                        "milktea"
+                };
+
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Chọn ảnh danh mục")
+                        .setItems(CATE_IMAGES, (d, which) -> {
+                            String name = CATE_IMAGES[which];
+                            if (edtImageUrl != null) {
+                                edtImageUrl.setText(name);
+                            }
+                            ImageLoader.load(
+                                    imgPreview,
+                                    name,
+                                    R.drawable.milktea
+                            );
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
             });
         }
 
@@ -293,7 +347,6 @@ public class CategoryManageFragment extends Fragment implements
     /* ================= CRUD trực tiếp Firestore ================= */
 
     private void addCategory(Map<String, Object> data, AlertDialog dialog) {
-        // thêm các field hệ thống giống repo làm
         data.put("createdAt", FieldValue.serverTimestamp());
         colCategories.add(data)
                 .addOnSuccessListener(doc -> {
