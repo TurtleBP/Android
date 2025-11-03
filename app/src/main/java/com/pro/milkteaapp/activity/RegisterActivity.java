@@ -51,14 +51,14 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        fullNameEditText        = findViewById(R.id.fullNameEditText);
-        emailEditText           = findViewById(R.id.emailEditText);
-        phoneEditText           = findViewById(R.id.phoneEditText);
-        addressEditText         = findViewById(R.id.addressEditText);
-        passwordEditText        = findViewById(R.id.passwordEditText);
+        fullNameEditText = findViewById(R.id.fullNameEditText);
+        emailEditText = findViewById(R.id.emailEditText);
+        phoneEditText = findViewById(R.id.phoneEditText);
+        addressEditText = findViewById(R.id.addressEditText);
+        passwordEditText = findViewById(R.id.passwordEditText);
         confirmPasswordEditText = findViewById(R.id.confirmPasswordEditText);
-        registerButton          = findViewById(R.id.registerButton);
-        loginTextView           = findViewById(R.id.loginTextView);
+        registerButton = findViewById(R.id.registerButton);
+        loginTextView = findViewById(R.id.loginTextView);
 
         confirmPasswordEditText.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -71,7 +71,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void setupFirebase() {
         auth = FirebaseAuth.getInstance();
-        db   = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance();
     }
 
     @SuppressLint("InflateParams")
@@ -93,11 +93,11 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void doRegister() {
-        final String fullName        = s(fullNameEditText);
-        final String email           = s(emailEditText);
-        final String phone           = s(phoneEditText);
-        final String address         = s(addressEditText);
-        final String password        = s(passwordEditText);
+        final String fullName = s(fullNameEditText);
+        final String email = s(emailEditText);
+        final String phone = s(phoneEditText);
+        final String address = s(addressEditText);
+        final String password = s(passwordEditText);
         final String confirmPassword = s(confirmPasswordEditText);
 
         if (!validateInputs(fullName, email, phone, password, confirmPassword)) return;
@@ -206,21 +206,25 @@ public class RegisterActivity extends AppCompatActivity {
         user.setRole("user");
         user.setAvatar("");
 
+        // ✅ Thêm loyalty mặc định
+        user.setLoyaltyTier("Đồng");  // Hạng mặc định
+        user.setLoyaltyPoints(0);     // Điểm mặc định
+
+        // ✅ Lưu vào Firestore đúng docId
         db.collection("users").document(userId)
                 .set(user)
                 .addOnSuccessListener(unused -> handleRegistrationSuccess(userId))
                 .addOnFailureListener(e -> {
-                    // nếu lưu Firestore lỗi thì vẫn nên signOut để user đăng ký lại
                     setLoading(false);
                     Toast.makeText(this, "Lỗi lưu hồ sơ: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 
     private void handleRegistrationSuccess(String userId) {
-        // lưu luôn vào session ID này để Fragment khác dùng
         try {
             new SessionManager(this).setUid(userId);
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
 
         safeSignOutAndClear();
         setLoading(false);
@@ -248,8 +252,13 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void safeSignOutAndClear() {
-        try { FirebaseAuth.getInstance().signOut(); } catch (Exception ignore) {}
-        try { new SessionManager(this).clear(); } catch (Throwable t) {
+        try {
+            FirebaseAuth.getInstance().signOut();
+        } catch (Exception ignore) {
+        }
+        try {
+            new SessionManager(this).clear();
+        } catch (Throwable t) {
             Log.w("Session", "clear failed: " + t.getMessage());
         }
     }

@@ -10,6 +10,8 @@ public class User implements Serializable {
     private String phone;
     private String address;
     private String avatar; // NEW
+    private String loyaltyTier;
+    private long loyaltyPoints;
 
     public User() {}
 
@@ -54,4 +56,20 @@ public class User implements Serializable {
     // NEW
     public String getAvatar() { return avatar; }
     public void setAvatar(String avatar) { this.avatar = avatar; }
+
+    public String getLoyaltyTier() {
+        return loyaltyTier;
+    }
+
+    public void setLoyaltyTier(String loyaltyTier) {
+        this.loyaltyTier = loyaltyTier;
+    }
+
+    public long getLoyaltyPoints() {
+        return loyaltyPoints;
+    }
+
+    public void setLoyaltyPoints(long loyaltyPoints) {
+        this.loyaltyPoints = loyaltyPoints;
+    }
 }

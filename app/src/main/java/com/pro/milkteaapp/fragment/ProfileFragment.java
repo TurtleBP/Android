@@ -6,6 +6,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -26,6 +27,7 @@ import com.pro.milkteaapp.activity.LoginActivity;
 import com.pro.milkteaapp.activity.OrderHistoryActivity;
 import com.pro.milkteaapp.activity.admin.AdminMainActivity;
 import com.pro.milkteaapp.databinding.ActivityProfileBinding;
+import com.pro.milkteaapp.models.User;
 import com.pro.milkteaapp.utils.ImageLoader;
 
 public class ProfileFragment extends Fragment {
@@ -35,6 +37,9 @@ public class ProfileFragment extends Fragment {
     private FirebaseFirestore db;
     private SessionManager session;
     private ListenerRegistration profileListener;
+
+    private TextView textViewLoyaltyTier;
+    private TextView textViewLoyaltyPoints;
 
     @Nullable
     @Override
@@ -51,7 +56,7 @@ public class ProfileFragment extends Fragment {
         });
 
         auth = FirebaseAuth.getInstance();
-        db   = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance();
         session = new SessionManager(requireContext());
 
         // chưa đăng nhập → về login
@@ -71,7 +76,9 @@ public class ProfileFragment extends Fragment {
                 v -> startActivity(new Intent(requireContext(), ChangePasswordActivity.class)));
 
         binding.btnLogout.setOnClickListener(v -> {
-            try { auth.signOut(); } catch (Throwable ignored) {}
+            try {
+                auth.signOut();
+            } catch (Throwable ignored) {}
             session.clear();
             Toast.makeText(requireContext(), getString(R.string.logged_out_successfully), Toast.LENGTH_SHORT).show();
             gotoLogin();
@@ -89,6 +96,7 @@ public class ProfileFragment extends Fragment {
                 v -> startActivity(new Intent(requireContext(), EditProfileActivity.class)));
 
         startProfileRealtime();
+        loadUserProfile();
 
         return binding.getRoot();
     }
@@ -122,7 +130,7 @@ public class ProfileFragment extends Fragment {
                         showLoading(false);
                         if (!qs.isEmpty()) {
                             DocumentSnapshot doc = qs.getDocuments().get(0);
-                            // lưu full vào session (quan trọng!)
+                            // lưu full vào session
                             session.saveUserFromFirestore(
                                     doc.getId(),
                                     doc.getString("email"),
@@ -169,23 +177,31 @@ public class ProfileFragment extends Fragment {
     // ================== BIND UI ==================
     private void bindProfile(@Nullable DocumentSnapshot snap) {
         String fullName = "";
-        String email    = "";
-        String role     = session.getRole();
-        String phone    = "";
-        String address  = "";
-        String avatar   = null;
+        String email = "";
+        String role = session.getRole();
+        String phone = "";
+        String address = "";
+        String avatar = null;
+
+        String loyaltyTier = "Đồng";
+        long loyaltyPoints = 0;
 
         if (snap != null && snap.exists()) {
             if (snap.getString("fullName") != null) fullName = snap.getString("fullName");
-            if (snap.getString("email")    != null) email    = snap.getString("email");
-            if (snap.getString("role")     != null) {
-                role = snap.getString("role");
-            }
-            if (snap.getString("phone")    != null) phone    = snap.getString("phone");
-            if (snap.getString("address")  != null) address  = snap.getString("address");
-            if (snap.getString("avatar")   != null) avatar   = snap.getString("avatar");
+            if (snap.getString("email") != null) email = snap.getString("email");
+            if (snap.getString("role") != null) role = snap.getString("role");
+            if (snap.getString("phone") != null) phone = snap.getString("phone");
+            if (snap.getString("address") != null) address = snap.getString("address");
+            if (snap.getString("avatar") != null) avatar = snap.getString("avatar");
 
-            // ✅ đồng bộ lại session đầy đủ luôn (để ProductFragment/adapter khác xài)
+            if (snap.getString("loyaltyTier") != null)
+                loyaltyTier = snap.getString("loyaltyTier");
+            if (snap.contains("loyaltyPoints")) {
+                Long points = snap.getLong("loyaltyPoints");
+                if (points != null) loyaltyPoints = points;
+            }
+
+            // ✅ Cập nhật lại session đầy đủ
             session.saveUserFromFirestore(
                     snap.getId(),
                     email,
@@ -202,6 +218,10 @@ public class ProfileFragment extends Fragment {
         binding.tvPhone.setText(TextUtils.isEmpty(phone) ? getString(R.string.unknown) : phone);
         binding.tvAddress.setText(TextUtils.isEmpty(address) ? getString(R.string.unknown) : address);
 
+        binding.tvLoyaltyTier.setText("Hạng: " + loyaltyTier);
+        binding.tvLoyaltyPoints.setText("Điểm: " + loyaltyPoints);
+
+        // ✅ Load avatar (URL hoặc drawable)
         ImageLoader.load(binding.imgAvatar, avatar, R.drawable.ic_avatar_default);
 
         boolean isAdmin = "admin".equalsIgnoreCase(role);
@@ -209,6 +229,40 @@ public class ProfileFragment extends Fragment {
     }
 
     // ================== COMMON ==================
+    private String resolveUidOrGoLogin() {
+        String uid = session.getUid();
+        if (uid == null && auth.getCurrentUser() != null) {
+            uid = auth.getCurrentUser().getUid();
+            session.setUid(uid);
+        }
+        if (uid == null) {
+            gotoLogin();
+        }
+        return uid;
+    }
+
+    private void loadUserProfile() {
+        db.collection("users").document(auth.getUid()).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        User currentUser = documentSnapshot.toObject(User.class);
+                        if (currentUser != null) {
+                            String tier = currentUser.getLoyaltyTier();
+                            long points = currentUser.getLoyaltyPoints();
+                            if (tier == null || tier.isEmpty()) {
+                                tier = "Bronze";
+                            }
+                            if (binding.tvLoyaltyTier != null) {
+                                binding.tvLoyaltyTier.setText("Hạng: " + tier);
+                            }
+                            if (binding.tvLoyaltyPoints != null) {
+                                binding.tvLoyaltyPoints.setText("Điểm tích lũy: " + points);
+                            }
+                        }
+                    }
+                });
+    }
+
     private void showLoading(boolean show) {
         if (binding == null) return;
         binding.progressBar.setVisibility(show ? View.VISIBLE : View.GONE);

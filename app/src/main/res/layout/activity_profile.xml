@@ -170,7 +170,32 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textColor="@color/gray_700"
-                        android:text="@string/unknown"/>
+                        android:text="@string/unknown"
+                        android:layout_marginBottom="16dp"/>
+
+                    <!-- add -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Khách hàng thân thiết"
+                        android:textColor="@color/black"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvLoyaltyTier"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/primary"
+                        android:textStyle="bold"
+                        android:text="Hạng: Đồng"/>
+
+                    <TextView
+                        android:id="@+id/tvLoyaltyPoints"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/gray_700"
+                        android:text="Điểm: 0"/>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

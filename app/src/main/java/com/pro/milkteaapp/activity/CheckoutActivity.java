@@ -2,6 +2,8 @@ package com.pro.milkteaapp.activity;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -10,14 +12,18 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.WriteBatch;
 import com.pro.milkteaapp.fragment.bottomsheet.CheckoutBottomSheet;
 import com.pro.milkteaapp.models.CartItem;
 import com.pro.milkteaapp.models.CheckoutInfo;
 import com.pro.milkteaapp.models.Products;
 import com.pro.milkteaapp.models.SelectedTopping;
+import com.pro.milkteaapp.models.User;
 import com.pro.milkteaapp.utils.MoneyUtils;
 
 import java.io.Serializable;
@@ -47,6 +53,11 @@ public class CheckoutActivity extends AppCompatActivity
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+
+    private User currentUser;
+    private double subtotal; // Tổng tiền hàng
+    private double discountPercent = 0.0;
+    private double totalAmount;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -80,28 +91,17 @@ public class CheckoutActivity extends AppCompatActivity
     }
 
     private void openCheckoutBottomSheet() {
-        // BottomSheet của anh: newInstance(@NonNull ArrayList<CartItem> items)
         CheckoutBottomSheet sheet = CheckoutBottomSheet.newInstance(cartItems);
-        // set listener kiểu cũ (anh cũng có hàm setOnCheckoutConfirmListener)
         sheet.setOnCheckoutConfirmListener(this);
         sheet.show(getSupportFragmentManager(), "CheckoutBottomSheet");
     }
 
-    /* =========================================================
-     *  IMPLEMENT callback từ BottomSheet
-     *  -> đây chính là hàm mà Android Studio báo lúc đầu
-     * ========================================================= */
     @Override
     public void onCheckoutConfirmed(@NonNull CheckoutInfo info) {
-        // lưu lại info để dùng khi tạo đơn
         this.checkoutInfo = info;
-        // tạo đơn
         placeOrder();
     }
 
-    /* =========================================================
-     *  Các hàm tính tiền – theo đúng cấu trúc CheckoutInfo của anh
-     * ========================================================= */
     private long computeSubtotalFromCart() {
         long sum = 0;
         for (CartItem i : cartItems) {
@@ -111,7 +111,6 @@ public class CheckoutActivity extends AppCompatActivity
     }
 
     private long getSubtotal() {
-        // CheckoutInfo đang để double
         return checkoutInfo != null
                 ? (long) checkoutInfo.getSubtotal()
                 : computeSubtotalFromCart();
@@ -135,10 +134,6 @@ public class CheckoutActivity extends AppCompatActivity
                 : Math.max(0L, getSubtotal() - getDiscount() + getShippingFee());
     }
 
-    /* =========================================================
-     *  Tạo đơn Firestore – giữ nguyên logic cũ
-     *  (chỉ bỏ binding và lấy dữ liệu từ checkoutInfo)
-     * ========================================================= */
     private void placeOrder() {
         if (cartItems.isEmpty()) {
             Toast.makeText(this, "Giỏ hàng trống", Toast.LENGTH_SHORT).show();
@@ -159,8 +154,6 @@ public class CheckoutActivity extends AppCompatActivity
         long shipping = getShippingFee();
         long total = getGrandTotal();
 
-        // vì CheckoutInfo của anh không có name/phone nên tạm để null
-        // (nếu sau này Address có name/phone thì lấy từ addressObj)
         String address = checkoutInfo != null ? checkoutInfo.getAddress() : "";
         String paymentMethod = checkoutInfo != null ? checkoutInfo.getPaymentMethod() : "COD";
         String shippingLabel = checkoutInfo != null
@@ -178,8 +171,8 @@ public class CheckoutActivity extends AppCompatActivity
         Map<String, Object> order = new HashMap<>();
         order.put("orderId", orderId);
         order.put("userId", uid);
-        order.put("name", null);   // không có ở CheckoutInfo
-        order.put("phone", null);  // không có ở CheckoutInfo
+        order.put("name", null);
+        order.put("phone", null);
         order.put("address", address);
         order.put("subtotal", subtotal);
         order.put("discount", discount);
@@ -194,7 +187,6 @@ public class CheckoutActivity extends AppCompatActivity
         WriteBatch batch = db.batch();
         batch.set(db.collection("orders").document(orderId), order);
 
-        // ghi order items
         for (CartItem item : cartItems) {
             Products p = item.getMilkTea();
             Map<String, Object> row = new HashMap<>();
@@ -206,8 +198,7 @@ public class CheckoutActivity extends AppCompatActivity
             row.put("unitPrice", item.getUnitPrice());
             row.put("lineTotal", item.getTotalPrice());
 
-            // toppings
-            java.util.List<Map<String, Object>> tops = new java.util.ArrayList<>();
+            java.util.List<Map<String, Object>> tops = new ArrayList<>();
             for (SelectedTopping st : item.getToppings()) {
                 Map<String, Object> m = new HashMap<>();
                 m.put("id", st.id);
@@ -227,16 +218,71 @@ public class CheckoutActivity extends AppCompatActivity
         }
 
         batch.commit()
-                .addOnSuccessListener(v -> recordVoucherUsageIfNeeded(uid, voucherCode,
-                        () -> {
-                            Toast.makeText(this, "Đặt hàng thành công!", Toast.LENGTH_SHORT).show();
-                            finish();
-                        },
-                        e -> {
-                            Toast.makeText(this, "Đơn đã tạo nhưng cập nhật lượt voucher lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                            finish();
-                        }))
-                .addOnFailureListener(e -> Toast.makeText(this, "Lỗi đặt hàng: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                .addOnSuccessListener(v -> {
+                    updateLoyaltyPoints(uid, total);
+                    recordVoucherUsageIfNeeded(uid, voucherCode,
+                            () -> {
+                                Toast.makeText(this, "Đặt hàng thành công!", Toast.LENGTH_SHORT).show();
+                                finish();
+                            },
+                            e -> {
+                                Toast.makeText(this, "Đơn đã tạo nhưng cập nhật lượt voucher lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                finish();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Lỗi đặt hàng: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+    }
+
+    private void updateLoyaltyPoints(String userId, double totalAmount) {
+        if (userId == null || userId.isEmpty() || totalAmount == 0) {
+            Log.e("LoyaltyUpdate", "Không đủ thông tin để cộng điểm.");
+            return;
+        }
+
+        final long pointsToAdd = (long) Math.floor(totalAmount / 10000);
+        if (pointsToAdd == 0) {
+            Log.d("LoyaltyUpdate", "Đơn hàng không đủ giá trị để cộng điểm.");
+            return;
+        }
+
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final DocumentReference userRef = db.collection("users").document(userId);
+
+        db.runTransaction(transaction -> {
+                    DocumentSnapshot userDoc = transaction.get(userRef);
+                    if (!userDoc.exists()) {
+                        throw new FirebaseFirestoreException("User không tồn tại.",
+                                FirebaseFirestoreException.Code.NOT_FOUND);
+                    }
+
+                    long currentPoints = 0;
+                    if (userDoc.contains("loyaltyPoints")) {
+                        currentPoints = userDoc.getLong("loyaltyPoints");
+                    }
+
+                    long newTotalPoints = currentPoints + pointsToAdd;
+                    String newTier = "Đồng";
+
+                    if (newTotalPoints >= 2000) {
+                        newTier = "Vàng";
+                    } else if (newTotalPoints >= 500) {
+                        newTier = "Bạc";
+                    } else {
+                        String currentTier = userDoc.getString("loyaltyTier");
+                        newTier = (currentTier != null) ? currentTier : "Đồng";
+                    }
+
+                    transaction.update(userRef,
+                            "loyaltyPoints", newTotalPoints,
+                            "loyaltyTier", newTier
+                    );
+
+                    return null;
+                })
+                .addOnSuccessListener(aVoid -> Log.d("LoyaltyUpdate", "Đã cộng thành công " + pointsToAdd + " điểm cho user " + userId))
+                .addOnFailureListener(e -> Log.e("LoyaltyUpdate", "Cộng điểm thất bại: ", e));
     }
 
     private void recordVoucherUsageIfNeeded(@NonNull String uid,
@@ -278,7 +324,6 @@ public class CheckoutActivity extends AppCompatActivity
 
     @Override
     public boolean onSupportNavigateUp() {
-        // dùng API cũ cho chắc
         getOnBackPressedDispatcher().onBackPressed();
         return true;
     }

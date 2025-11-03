@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.pro.milkteaapp.adapter.CheckoutItemAdapter;
 import com.pro.milkteaapp.databinding.CheckoutBottomSheetBinding;
 import com.pro.milkteaapp.fragment.pickersheet.AddressPickerSheet;
@@ -21,6 +22,7 @@ import com.pro.milkteaapp.fragment.pickersheet.VoucherListPickerSheet;
 import com.pro.milkteaapp.models.Address;
 import com.pro.milkteaapp.models.CartItem;
 import com.pro.milkteaapp.models.CheckoutInfo;
+import com.pro.milkteaapp.models.User;
 import com.pro.milkteaapp.models.Voucher;
 import com.pro.milkteaapp.utils.MoneyUtils;
 import com.pro.milkteaapp.utils.VoucherUtils;
@@ -58,6 +60,8 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
     private String shippingLabel = "Tiêu chuẩn (15.000đ)";
     private long shippingFee = 15_000L;
 
+    private User currentUser;
+
     public void setOnCheckoutConfirmListener(OnCheckoutConfirmListener l) {
         this.listener = l;
     }
@@ -87,6 +91,9 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         // List sản phẩm
         b.rvItems.setLayoutManager(new LinearLayoutManager(requireContext()));
         b.rvItems.setAdapter(new CheckoutItemAdapter(requireContext(), items));
+
+        // Tải thông tin User để tính giảm giá
+        loadUserAndRender();
 
         // Render ban đầu
         updateSummaryUI();
@@ -168,6 +175,27 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         return subtotal;
     }
 
+    private void loadUserAndRender() {
+        String uid = (FirebaseAuth.getInstance().getCurrentUser() != null)
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
+
+        if (uid == null) {
+            updateSummaryUI(); // Không có user, cứ hiển thị giá
+            return;
+        }
+
+        FirebaseFirestore.getInstance().collection("users").document(uid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        currentUser = doc.toObject(User.class);
+                    }
+                    updateSummaryUI(); // Cập nhật UI sau khi có (hoặc không có) user
+                })
+                .addOnFailureListener(e -> {
+                    updateSummaryUI(); // Lỗi cũng phải cập nhật UI
+                });
+    }
+
     private void updateSummaryUI() {
         long subtotal = calcSubtotal();
 
@@ -177,11 +205,36 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
             orderDisc = r.orderDiscount;
             shipDisc = r.shippingDiscount;
         }
-        long discount = orderDisc + shipDisc;
-        long total = Math.max(0L, subtotal - discount + shippingFee);
+
+        long voucherDiscount = orderDisc + shipDisc; // Tổng giảm giá từ voucher
+
+        long loyaltyDiscount = 0L;
+        double loyaltyPercent = 0.0;
+
+        if (currentUser != null && currentUser.getLoyaltyTier() != null) {
+            switch (currentUser.getLoyaltyTier()) {
+                case "Vàng":
+                    loyaltyPercent = 0.10; // Giảm 10%
+                    break;
+                case "Bạc":
+                    loyaltyPercent = 0.05; // Giảm 5%
+                    break;
+                // case "Đồng": (không giảm)
+            }
+        }
+        // Giảm giá thành viên tính trên TỔNG TIỀN HÀNG (subtotal)
+        loyaltyDiscount = (long) (subtotal * loyaltyPercent);
+
+        // long discount = orderDisc + shipDisc;
+        //long total = Math.max(0L, subtotal - discount + shippingFee);
+
+        long totalDiscount = voucherDiscount + loyaltyDiscount;
+        long total = Math.max(0L, subtotal - totalDiscount + shippingFee);
 
         b.tvSubtotal.setText(MoneyUtils.formatVnd(subtotal));
-        b.tvDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(discount)));
+        // b.tvDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(discount)));
+        b.tvDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(voucherDiscount))); // Giảm giá voucher
+        b.tvLoyaltyDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(loyaltyDiscount))); // Giảm giá thành viên
         b.tvShipping.setText(MoneyUtils.formatVnd(shippingFee));
         b.tvFinal.setText(MoneyUtils.formatVnd(total));
 
@@ -200,8 +253,22 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
             orderDisc = r.orderDiscount;
             shipDisc = r.shippingDiscount;
         }
-        long discount = orderDisc + shipDisc;
-        long total = Math.max(0L, subtotal - discount + shippingFee);
+        long voucherDiscount = orderDisc + shipDisc;
+
+        // Tính giảm giá thành viên
+        long loyaltyDiscount = 0L;
+        if (currentUser != null && currentUser.getLoyaltyTier() != null) {
+            double loyaltyPercent = 0.0;
+            switch (currentUser.getLoyaltyTier()) {
+                case "Vàng": loyaltyPercent = 0.10; break;
+                case "Bạc": loyaltyPercent = 0.05; break;
+            }
+            loyaltyDiscount = (long) (subtotal * loyaltyPercent);
+        }
+
+        // Tổng
+        long totalDiscount = voucherDiscount + loyaltyDiscount; // TỔNG GIẢM GIÁ
+        long total = Math.max(0L, subtotal - totalDiscount + shippingFee);
 
         String addressString = selectedAddress != null ? selectedAddress.displayLine() : "";
 
@@ -212,7 +279,7 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
                 voucherCode,
                 shippingLabel,
                 subtotal,
-                discount,
+                totalDiscount,
                 shippingFee,
                 total
         );

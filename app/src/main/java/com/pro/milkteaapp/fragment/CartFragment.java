@@ -221,6 +221,9 @@ public class CartFragment extends Fragment
                                     // Ghi nhận lượt dùng voucher (nếu có)
                                     recordVoucherUsageIfNeeded(user.getUid(), info.voucherCode,
                                             () -> {
+
+                                                updateLoyaltyPoints(user.getUid(), info.grandTotal);
+
                                                 cartItems.clear();
                                                 Toast.makeText(app, app.getString(R.string.order_placed_successfully), Toast.LENGTH_SHORT).show();
 
@@ -262,6 +265,63 @@ public class CartFragment extends Fragment
                     runOnUiSafe(() -> {
                         if (binding != null) binding.checkoutButton.setEnabled(true);
                     });
+                });
+    }
+
+    private void updateLoyaltyPoints(String userId, double totalAmount) {
+        if (userId == null || userId.isEmpty() || totalAmount == 0) {
+            Log.e("LoyaltyUpdate", "Không đủ thông tin để cộng điểm.");
+            return;
+        }
+
+        //quy tắc: 10k = 1 điểm (có thể thay đổi)
+        final long pointsToAdd = (long) Math.floor(totalAmount / 10000);
+
+        if (pointsToAdd == 0) {
+            Log.d("LoyaltyUpdate", "Đơn hàng không đủ giá trị để cộng điểm.");
+            return;
+        }
+
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final DocumentReference userRef = db.collection("users").document(userId);
+
+        db.runTransaction(transaction -> {
+                    DocumentSnapshot userDoc = transaction.get(userRef);
+
+                    if (!userDoc.exists()) {
+                        throw new FirebaseFirestoreException("User không tồn tại.",
+                                FirebaseFirestoreException.Code.NOT_FOUND);
+                    }
+
+                    long currentPoints = 0;
+                    if (userDoc.contains("loyaltyPoints")) {
+                        currentPoints = userDoc.getLong("loyaltyPoints");
+                    }
+
+                    long newTotalPoints = currentPoints + pointsToAdd;
+                    String newTier = "Đồng"; // Hạng mặc định
+
+                    if (newTotalPoints >= 2000) {
+                        newTier = "Vàng";
+                    } else if (newTotalPoints >= 500) {
+                        newTier = "Bạc";
+                    } else {
+                        String currentTier = userDoc.getString("loyaltyTier");
+                        newTier = (currentTier != null) ? currentTier : "Đồng";
+                    }
+
+                    transaction.update(userRef,
+                            "loyaltyPoints", newTotalPoints,
+                            "loyaltyTier", newTier
+                    );
+
+                    return null;
+                })
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("LoyaltyUpdate", "Đã cộng thành công " + pointsToAdd + " điểm cho user " + userId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("LoyaltyUpdate", "Cộng điểm thất bại: ", e);
                 });
     }
 
