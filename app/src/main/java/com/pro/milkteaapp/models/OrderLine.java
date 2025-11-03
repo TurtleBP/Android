@@ -13,6 +13,11 @@ public class OrderLine implements Serializable {
     private String name;
     private String size;
     private List<Topping> toppings;  // sửa kiểu toppings sang List<Topping>
+
+    private String sugar;
+    private String ice;
+    private String note;
+
     private int quantity;
     private double unitPrice;
     private double lineTotal;
@@ -32,6 +37,10 @@ public class OrderLine implements Serializable {
         // size/biến thể
         Object s = pick(m, "sizeName", "size", "variant");
         ol.size = s == null ? "" : String.valueOf(s);
+
+        ol.sugar = asString(pick(m, "sugar"));
+        ol.ice = asString(pick(m, "ice"));
+        ol.note = asString(pick(m, "note"));
 
         // toppings: chuyển từ List<Map> thành List<Topping>
         Object tops = m.get("toppings");
@@ -58,6 +67,10 @@ public class OrderLine implements Serializable {
         ol.lineTotal = lt != null ? toDouble(lt) : (ol.unitPrice * ol.quantity);
 
         return ol;
+    }
+
+    private static String asString(Object o) {
+        return o == null ? "" : String.valueOf(o);
     }
 
     // Chuyển map thành đối tượng Topping
@@ -101,6 +114,11 @@ public class OrderLine implements Serializable {
     @NonNull public String getName() { return name == null ? "" : name; }
     @NonNull public String getSize() { return size == null ? "" : size; }
     @NonNull public List<Topping> getToppings() { return toppings == null ? new ArrayList<>() : toppings; }
+
+    @NonNull public String getSugar() { return sugar == null ? "" : sugar; }
+    @NonNull public String getIce() { return ice == null ? "" : ice; }
+    @NonNull public String getNote() { return note == null ? "" : note; }
+
     public int getQuantity() { return quantity; }
     public double getUnitPrice() { return unitPrice; }
     public double getLineTotal() { return lineTotal; }
@@ -109,18 +127,50 @@ public class OrderLine implements Serializable {
     @NonNull
     public String buildMeta() {
         StringBuilder sb = new StringBuilder();
+        boolean added = false;
 
-        // Nếu có size thì xuống dòng ghi "Size: <size>"
+//        // Nếu có size thì xuống dòng ghi "Size: <size>"
+//        if (!getSize().isEmpty()) {
+//            sb.append("Size: ").append(getSize()).append("\n");
+//        }
+//
+//        // Nếu có topping thì xuống dòng ghi "Topping:" rồi list từng topping xuống dòng, thụt đầu dòng 5-6 spaces
+//        List<Topping> tops = getToppings();
+//        if (!tops.isEmpty()) {
+//            sb.append("Topping: ");
+//            for (Topping t : tops) {
+//                sb.append(" - ").append(t.getName()).append("");
+//            }
+//        }
+
+        // Size
         if (!getSize().isEmpty()) {
-            sb.append("Size: ").append(getSize()).append("\n");
+            sb.append("Size: ").append(getSize());
+            added = true;
         }
 
-        // Nếu có topping thì xuống dòng ghi "Topping:" rồi list từng topping xuống dòng, thụt đầu dòng 5-6 spaces
+        // Sugar
+        if (!getSugar().isEmpty()) {
+            if (added) sb.append(" • ");
+            sb.append(getSugar());
+            added = true;
+        }
+
+        // Ice
+        if (!getIce().isEmpty()) {
+            if (added) sb.append(" • ");
+            sb.append(getIce());
+            added = true;
+        }
+
+        // Topping
         List<Topping> tops = getToppings();
         if (!tops.isEmpty()) {
+            if (added) sb.append(" • ");
             sb.append("Topping: ");
-            for (Topping t : tops) {
-                sb.append(" - ").append(t.getName()).append("");
+            for (int i = 0; i < tops.size(); i++) {
+                sb.append(tops.get(i).getName());
+                if (i < tops.size() - 1) sb.append(", ");
             }
         }
 

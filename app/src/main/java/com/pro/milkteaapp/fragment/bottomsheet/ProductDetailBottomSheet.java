@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.*;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -39,7 +40,7 @@ public class ProductDetailBottomSheet extends BottomSheetDialogFragment {
     private static final String ARG_IMAGE_URL = "ARG_IMAGE_URL";
 
     public interface Listener {
-        void onAddToCart(Products product, int qty, String size, java.util.List<SelectedTopping> toppings);
+        void onAddToCart(Products product, int qty, String size, String sugar, String ice, String note, java.util.List<SelectedTopping> toppings);
     }
 
     private Listener listener;
@@ -49,6 +50,10 @@ public class ProductDetailBottomSheet extends BottomSheetDialogFragment {
     private TextView nameTextView, priceTextView, descriptionTextView, quantityTextView, totalPriceTextView;
     private RadioGroup sizeRadioGroup;
     private MaterialButton decrementButton, incrementButton, addToCartButton;
+
+    private RadioGroup sugarRadioGroup;
+    private RadioGroup iceRadioGroup;
+    private EditText edtNote;
 
     private RecyclerView recyclerToppings;
     private TextView toppingsEmpty;
@@ -103,6 +108,10 @@ public class ProductDetailBottomSheet extends BottomSheetDialogFragment {
         addToCartButton     = v.findViewById(R.id.addToCartButton);
         recyclerToppings    = v.findViewById(R.id.recyclerToppings);
         toppingsEmpty       = v.findViewById(R.id.toppingsEmpty);
+
+        sugarRadioGroup = v.findViewById(R.id.sugarRadioGroup);
+        iceRadioGroup   = v.findViewById(R.id.iceRadioGroup);
+        edtNote         = v.findViewById(R.id.edtNote);
         return v;
     }
 
@@ -174,10 +183,19 @@ public class ProductDetailBottomSheet extends BottomSheetDialogFragment {
             updateTotal();
         });
         sizeRadioGroup.setOnCheckedChangeListener((g, id) -> updateTotal());
+        sugarRadioGroup.setOnCheckedChangeListener((g, id) -> updateTotal()); // THÊM
+        iceRadioGroup.setOnCheckedChangeListener((g, id) -> updateTotal());   // THÊM
 
         addToCartButton.setOnClickListener(v13 -> {
             if (listener != null && product != null) {
-                listener.onAddToCart(product, quantity, selectedSize(), new ArrayList<>(selected));
+
+                String size = selectedSize();
+                String sugar = selectedSugar(sugarRadioGroup);
+                String ice = selectedIce(iceRadioGroup);
+                String note = edtNote.getText() != null ? edtNote.getText().toString().trim() : "";
+
+                listener.onAddToCart(product, quantity, size,
+                        sugar, ice, note, new ArrayList<>(selected));
             }
             dismiss();
         });
@@ -234,9 +252,25 @@ public class ProductDetailBottomSheet extends BottomSheetDialogFragment {
 
     private String selectedSize() {
         int checked = sizeRadioGroup.getCheckedRadioButtonId();
-        if (checked == R.id.radioSmall)  return "Small";
-        if (checked == R.id.radioLarge)  return "Large";
-        return "Medium";
+        if (checked == R.id.radioSmall)  return "Nhỏ";
+        if (checked == R.id.radioLarge)  return "Lớn";
+        return "Vừa";
+    }
+
+    private String selectedSugar(RadioGroup group) {
+        int id = group.getCheckedRadioButtonId();
+        if (id == R.id.radioSugar0) return "0% đường";
+        if (id == R.id.radioSugar50) return "50% đường";
+        if (id == R.id.radioSugar120) return "120% đường";
+        return "100% đường"; // Default
+    }
+
+    private String selectedIce(RadioGroup group) {
+        int id = group.getCheckedRadioButtonId();
+        if (id == R.id.radioIceSeparate) return "Đá riêng";
+        if (id == R.id.radioIce0) return "0% đá";
+        if (id == R.id.radioIce50) return "50% đá";
+        return "100% đá"; // Default
     }
 
     // Helpers

@@ -206,6 +206,10 @@ public class CheckoutActivity extends AppCompatActivity
             row.put("unitPrice", item.getUnitPrice());
             row.put("lineTotal", item.getTotalPrice());
 
+            row.put("sugar", item.getSugar());
+            row.put("ice", item.getIce());
+            row.put("note", item.getNote());
+
             // toppings
             java.util.List<Map<String, Object>> tops = new java.util.ArrayList<>();
             for (SelectedTopping st : item.getToppings()) {

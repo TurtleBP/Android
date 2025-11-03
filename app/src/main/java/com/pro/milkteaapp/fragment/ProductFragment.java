@@ -446,8 +446,8 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
         if (!isAdded() || milkTea == null || TextUtils.isEmpty(milkTea.getId())) return;
 
         ProductDetailBottomSheet sheet = ProductDetailBottomSheet.newInstance(milkTea);
-        sheet.setListener((p, qty, size, toppings) -> {
-            CartItem newItem = new CartItem(p, qty, size, toppings);
+        sheet.setListener((p, qty, size, sugar, ice, note, toppings) -> {
+            CartItem newItem = new CartItem(p, qty, size, sugar, ice, note, toppings);
 
             int existed = -1;
             for (int i = 0; i < CartFragment.cartItems.size(); i++) {
@@ -461,7 +461,7 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
 
             String label = newItem.getToppingsLabel();
             Toast.makeText(requireContext(),
-                    "Đã thêm " + qty + " " + p.getName() + " (" + size + ("Không".equals(label) ? "" : ", " + label) + ")",
+                    "Đã thêm " + qty + " " + p.getName() + " (" + size + ("".equals(label) ? "" : ", " + label) + ")",
                     Toast.LENGTH_SHORT).show();
         });
         sheet.show(getParentFragmentManager(), "product_detail_sheet");

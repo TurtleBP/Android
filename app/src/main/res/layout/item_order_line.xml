@@ -16,6 +16,16 @@
         android:text="Size L • Topping: Trân châu, Pudding"
         android:textColor="?android:attr/textColorSecondary"/>
 
+    <TextView
+        android:id="@+id/tvNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="Ghi chú: Ít đá"
+        android:textColor="@color/primary"
+        android:textStyle="italic"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
