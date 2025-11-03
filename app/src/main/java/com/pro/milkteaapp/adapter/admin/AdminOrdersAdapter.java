@@ -23,14 +23,18 @@ import java.util.Objects;
 
 public class AdminOrdersAdapter extends ListAdapter<Order, AdminOrdersAdapter.VH> {
 
+    // ===== Interface callbacks =====
+    public interface OnItemClick { void click(@NonNull Order o); }
     public interface OnConfirm { void confirm(Order o); }
     public interface OnCancel  { void cancel(Order o); }
     public interface OnDelete  { void delete(Order o); }
 
+    private final OnItemClick onItemClick;
     private final OnConfirm onConfirm;
     private final OnCancel  onCancel;
     private final OnDelete  onDelete;
 
+    // ===== Control buttons visibility =====
     private boolean showConfirm = true;   // Pending
     private boolean showCancel  = true;   // Pending
     private boolean showDelete  = false;  // Cancelled
@@ -42,6 +46,7 @@ public class AdminOrdersAdapter extends ListAdapter<Order, AdminOrdersAdapter.VH
     @SuppressLint("NotifyDataSetChanged")
     public void setShowDelete(boolean show)  { this.showDelete  = show; notifyDataSetChanged(); }
 
+    // ===== DiffUtil =====
     private static final DiffUtil.ItemCallback<Order> DIFF = new DiffUtil.ItemCallback<>() {
         @Override public boolean areItemsTheSame(@NonNull Order a, @NonNull Order b) {
             return Objects.equals(a.getId(), b.getId());
@@ -52,10 +57,13 @@ public class AdminOrdersAdapter extends ListAdapter<Order, AdminOrdersAdapter.VH
         }
     };
 
-    public AdminOrdersAdapter(@NonNull OnConfirm onConfirm,
+    // ===== Constructor =====
+    public AdminOrdersAdapter(@NonNull OnItemClick onItemClick,
+                              @NonNull OnConfirm onConfirm,
                               @NonNull OnCancel onCancel,
                               @NonNull OnDelete onDelete) {
         super(DIFF);
+        this.onItemClick = onItemClick;
         this.onConfirm = onConfirm;
         this.onCancel = onCancel;
         this.onDelete = onDelete;
@@ -67,6 +75,7 @@ public class AdminOrdersAdapter extends ListAdapter<Order, AdminOrdersAdapter.VH
         return o != null ? o.getId().hashCode() : RecyclerView.NO_ID;
     }
 
+    // ===== ViewHolder =====
     public static class VH extends RecyclerView.ViewHolder {
         TextView tvId, tvTotal, tvUser, tvTime, tvStatus;
         MaterialButton btnConfirm, btnCancel, btnDelete;
@@ -123,15 +132,22 @@ public class AdminOrdersAdapter extends ListAdapter<Order, AdminOrdersAdapter.VH
         }
     }
 
+    // ===== Adapter overrides =====
     @NonNull @Override
-    public VH onCreateViewHolder(@NonNull ViewGroup p, int vt) {
-        View v = LayoutInflater.from(p.getContext()).inflate(R.layout.item_admin_order, p, false);
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_admin_order, parent, false);
         return new VH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH h, int pos) {
-        h.bind(getItem(pos), showConfirm, showCancel, showDelete, onConfirm, onCancel, onDelete);
+    public void onBindViewHolder(@NonNull VH holder, int position) {
+        Order o = getItem(position);
+        holder.bind(o, showConfirm, showCancel, showDelete, onConfirm, onCancel, onDelete);
+
+        // ==== click toàn bộ item để xem chi tiết ====
+        holder.itemView.setOnClickListener(v -> {
+            if (onItemClick != null) onItemClick.click(o);
+        });
     }
 
     @Override

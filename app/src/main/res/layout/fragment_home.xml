@@ -79,15 +79,36 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-
-                <TextView
-                    android:id="@+id/tvTopPrice"
+                <!-- Dòng tiêu đề + nút animation đỏ -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="Sản phẩm nổi bật"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    android:textColor="@color/black"/>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="24dp">
+
+                    <TextView
+                        android:id="@+id/tvTopPrice"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Sản phẩm nổi bật"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        android:textColor="@color/black"/>
+
+                    <!-- animation đỏ kêu gọi click (to hơn) -->
+                    <com.airbnb.lottie.LottieAnimationView
+                        android:id="@+id/lavSeeMore"
+                        android:layout_width="150dp"
+                        android:layout_height="50dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:lottie_rawRes="@raw/anim_arrow_right_red"
+                        app:lottie_autoPlay="true"
+                        app:lottie_loop="true"
+                        app:lottie_speed="1.4"
+                        android:contentDescription="Xem thêm sản phẩm"/>
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvTopPrice"
@@ -118,20 +139,5 @@
         </androidx.core.widget.NestedScrollView>
 
 
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/lavCart"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:layout_margin="16dp"
-            android:visibility="gone"
-            android:clickable="false"
-            android:focusable="false"
-            app:layout_anchor="@id/scrollHome"
-            app:layout_anchorGravity="bottom|end"
-            app:lottie_rawRes="@raw/milktea_splash"
-            app:lottie_autoPlay="false"
-            app:lottie_loop="false"
-            app:lottie_speed="1.2"
-            app:lottie_renderMode="hardware" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

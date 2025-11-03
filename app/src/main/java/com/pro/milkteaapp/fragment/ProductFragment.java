@@ -20,18 +20,16 @@ import androidx.recyclerview.widget.GridLayoutManager;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.*;
 import com.pro.milkteaapp.R;
+import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.adapter.ProductsSectionAdapter;
 import com.pro.milkteaapp.databinding.FragmentProductBinding;
 import com.pro.milkteaapp.fragment.bottomsheet.ProductDetailBottomSheet;
 import com.pro.milkteaapp.models.CartItem;
 import com.pro.milkteaapp.models.Products;
+import com.pro.milkteaapp.utils.ImageLoader;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -53,6 +51,7 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
 
     private FirebaseFirestore db;
     private ListenerRegistration subProducts;
+    private ListenerRegistration userListener;
 
     private AppBarLayout appBar;
     private MaterialAutoCompleteTextView actvCategoryCollapsed;
@@ -112,7 +111,7 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
         });
 
         setupFabCart();
-        greetUser();
+        greetUser();          // ✅ bản mới
         setupSearchListener();
         setupProfileIconClickListener();
 
@@ -165,39 +164,18 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
         Query q = db.collection("products")
                 .orderBy("category", Query.Direction.ASCENDING)
                 .orderBy("name", Query.Direction.ASCENDING);
-        subProducts = q.addSnapshotListener((QuerySnapshot snapshot, FirebaseFirestoreException e) -> {
+        subProducts = q.addSnapshotListener((snapshot, e) -> {
             if (!isAdded() || binding == null) return;
             setLoading(false);
             allProducts.clear();
             if (e != null) {
                 Log.e("Firestore", "Listen products failed", e);
-                String msg = String.valueOf(e.getMessage());
-                if (msg.contains("FAILED_PRECONDITION") && msg.contains("requires an index")) {
-                    fallbackListenProductsByNameOnly();
-                    return;
-                }
                 adapter.submitRows(new ArrayList<>()); setEmpty(true); return;
             }
             fillProductsFromSnapshot(snapshot);
             ensureCategoriesIfEmpty();
             rebuildSectionsAndShow(null);
         });
-    }
-
-    private void fallbackListenProductsByNameOnly() {
-        if (subProducts != null) { subProducts.remove(); subProducts = null; }
-        setLoading(true); setEmpty(false);
-        subProducts = db.collection("products")
-                .orderBy("name", Query.Direction.ASCENDING)
-                .addSnapshotListener((QuerySnapshot snapshot, FirebaseFirestoreException e2) -> {
-                    if (!isAdded() || binding == null) return;
-                    setLoading(false);
-                    allProducts.clear();
-                    if (e2 != null) { Log.e("Firestore", "Fallback listen failed", e2); adapter.submitRows(new ArrayList<>()); setEmpty(true); return; }
-                    fillProductsFromSnapshot(snapshot);
-                    ensureCategoriesIfEmpty();
-                    rebuildSectionsAndShow(null);
-                });
     }
 
     private void fillProductsFromSnapshot(@Nullable QuerySnapshot snapshot) {
@@ -212,9 +190,6 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
                 }
                 allProducts.add(m);
             }
-            Log.d("UI", "Products loaded: " + allProducts.size());
-        } else {
-            Log.w("Firestore", "No data in products");
         }
     }
 
@@ -266,9 +241,12 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
         List<String> result = new ArrayList<>();
         result.add(ALL);
         if (src != null) {
-            for (String p : preferred) for (String s : src) { if (norm(s).equals(norm(p))) { result.add(s); break; } }
+            for (String p : preferred)
+                for (String s : src)
+                    if (norm(s).equals(norm(p))) { result.add(s); break; }
             for (String s : src) {
-                boolean already = false; for (String r : result) if (norm(r).equals(norm(s))) { already = true; break; }
+                boolean already = false;
+                for (String r : result) if (norm(r).equals(norm(s))) { already = true; break; }
                 if (!already) result.add(s);
             }
         }
@@ -330,20 +308,117 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
         });
     }
 
+    /**
+     * Chào user theo thứ tự:
+     * 1. Nếu đã có trong Session (tên + avatar) → dùng luôn
+     * 2. Nếu có docId (USRxxxxx) → nghe realtime Firestore → set lại session
+     * 3. Nếu chưa có docId → query theo email lần đầu → set session
+     * 4. Cuối cùng mới rơi xuống email
+     */
     @SuppressLint("SetTextI18n")
     private void greetUser() {
         if (binding == null) return;
-        SharedPreferences prefs = requireActivity().getSharedPreferences("MyPrefs", android.content.Context.MODE_PRIVATE);
-        String name = prefs.getString("username", "");
-        if (TextUtils.isEmpty(name)) {
-            String authName = null;
-            if (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null) {
-                authName = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getDisplayName();
-                if (TextUtils.isEmpty(authName)) authName = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getEmail();
+
+        SessionManager session = new SessionManager(requireContext());
+        String cachedName = session.getDisplayName();
+        String cachedAvatar = session.getAvatar();
+
+        // nếu session đã có tên → ưu tiên
+        if (!TextUtils.isEmpty(cachedName)) {
+            binding.textGreeting.setText("Xin chào, " + cachedName + "!");
+        } else {
+            // fallback cũ từ SharedPreferences (phòng trường hợp màn cũ có save)
+            SharedPreferences prefs = requireActivity().getSharedPreferences("MyPrefs", android.content.Context.MODE_PRIVATE);
+            String name = prefs.getString("username", "");
+            if (TextUtils.isEmpty(name)) {
+                String authName = null;
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    authName = FirebaseAuth.getInstance().getCurrentUser().getDisplayName();
+                    if (TextUtils.isEmpty(authName)) authName = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+                }
+                name = !TextUtils.isEmpty(authName) ? authName : "Người dùng";
             }
-            name = !TextUtils.isEmpty(authName) ? authName : "Người dùng";
+            binding.textGreeting.setText("Xin chào, " + name + "!");
         }
-        binding.textGreeting.setText("Xin chào, " + name + "!");
+
+        // avatar từ session (nếu có) → hiển thị ngay
+        ImageLoader.load(binding.profileIcon, cachedAvatar, R.drawable.ic_avatar_default);
+
+        // 2. nếu session đã có docId (USRxxxxx) → nghe realtime
+        String docId = session.getUid();
+        if (!TextUtils.isEmpty(docId)) {
+            listenUserAvatarAndNameRealtime(docId, session);
+            return;
+        }
+
+        // 3. nếu chưa có docId → query theo email lần đầu
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+            if (!TextUtils.isEmpty(email)) {
+                db.collection("users")
+                        .whereEqualTo("email", email)
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener(qs -> {
+                            if (!isAdded() || binding == null) return;
+                            if (!qs.isEmpty()) {
+                                DocumentSnapshot doc = qs.getDocuments().get(0);
+                                String id = doc.getId();
+                                String fullName = doc.getString("fullName");
+                                String role = doc.getString("role");
+                                String avatar = doc.getString("avatar");
+
+                                // lưu lại toàn bộ vào session để lần sau không bị "Xin chào, gmail"
+                                session.saveUserFromFirestore(
+                                        id,
+                                        email,
+                                        fullName,
+                                        role,
+                                        avatar
+                                );
+
+                                // bind UI
+                                String display = !TextUtils.isEmpty(fullName) ? fullName : email;
+                                binding.textGreeting.setText("Xin chào, " + display + "!");
+                                ImageLoader.load(binding.profileIcon, avatar, R.drawable.ic_avatar_default);
+
+                                // và nghe realtime luôn
+                                listenUserAvatarAndNameRealtime(id, session);
+                            }
+                        });
+            }
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void listenUserAvatarAndNameRealtime(@NonNull String docId, @NonNull SessionManager session) {
+        if (userListener != null) userListener.remove();
+        userListener = db.collection("users").document(docId)
+                .addSnapshotListener((snap, e) -> {
+                    if (!isAdded() || binding == null) return;
+                    if (snap != null && snap.exists()) {
+                        String fullName = snap.getString("fullName");
+                        String avatar   = snap.getString("avatar");
+                        String email    = snap.getString("email");
+                        String role     = snap.getString("role");
+
+                        // cập nhật UI
+                        String display = !TextUtils.isEmpty(fullName)
+                                ? fullName
+                                : (!TextUtils.isEmpty(email) ? email : "Người dùng");
+                        binding.textGreeting.setText("Xin chào, " + display + "!");
+                        ImageLoader.load(binding.profileIcon, avatar, R.drawable.ic_avatar_default);
+
+                        // cập nhật session để màn khác dùng lại
+                        session.saveUserFromFirestore(
+                                docId,
+                                email,
+                                fullName,
+                                role,
+                                avatar
+                        );
+                    }
+                });
     }
 
     private void setupProfileIconClickListener() {
@@ -358,7 +433,14 @@ public class ProductFragment extends Fragment implements ProductsSectionAdapter.
         });
     }
 
-    // ======================= Product click → mở BottomSheet (mới) =======================
+    @Override
+    public void onDestroyView() {
+        if (subProducts != null) { subProducts.remove(); subProducts = null; }
+        if (userListener != null) { userListener.remove(); userListener = null; }
+        binding = null;
+        super.onDestroyView();
+    }
+
     @Override
     public void onClick(Products milkTea) {
         if (!isAdded() || milkTea == null || TextUtils.isEmpty(milkTea.getId())) return;

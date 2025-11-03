@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class EntryActivity extends ComponentActivity {
 
     // Thời gian chờ tối đa khi chưa có cache role (đảm bảo splash mượt)
-    private static final long MAX_WAIT_MS = 250L;
+    private static final long MAX_WAIT_MS = 150L;
 
     private boolean navigated = false;
     private boolean ready = false;

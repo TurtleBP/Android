@@ -14,20 +14,27 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.bumptech.glide.Glide;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.adapter.CategoryAdapter;
 import com.pro.milkteaapp.handler.AddActionHandler;
 import com.pro.milkteaapp.models.Category;
-import com.pro.milkteaapp.viewmodel.AdminCategoriesViewModel;
+import com.pro.milkteaapp.utils.ImageLoader;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,13 +42,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
-public class CategoryManageFragment extends Fragment implements AddActionHandler,
+/**
+ * Quản lý danh mục cho admin – bản không dùng ViewModel.
+ * Truy cập Firestore trực tiếp.
+ */
+public class CategoryManageFragment extends Fragment implements
+        AddActionHandler,
         CategoryAdapter.OnCategoryActionListener {
 
     // Views
-    private RecyclerView recyclerView;
+    private androidx.recyclerview.widget.RecyclerView recyclerView;
     private LinearProgressIndicator progressBar;
     private SwipeRefreshLayout swipeRefresh;
     private View emptyState;
@@ -49,111 +59,139 @@ public class CategoryManageFragment extends Fragment implements AddActionHandler
     private TextInputEditText edtSearch;
     private Button btnAddFirst;
 
-    // Adapter & VM
-    private CategoryAdapter adapter;
-    private AdminCategoriesViewModel vm;
+    // Firebase
+    private FirebaseFirestore db;
+    private CollectionReference colCategories;
+    private ListenerRegistration reg; // để remove khi onDestroyView
 
-    // Data
+    // Adapter + data
+    private CategoryAdapter adapter;
     private final List<Category> list = new ArrayList<>();
 
-    public CategoryManageFragment() {}
+    public CategoryManageFragment() {
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
 
         View v = inflater.inflate(R.layout.fragment_admin_category, container, false);
 
-        // Bind views
-        recyclerView = v.findViewById(R.id.recyclerViewCategories);
-        progressBar  = v.findViewById(R.id.progressBar);
-        swipeRefresh = v.findViewById(R.id.swipeRefresh);
-        emptyState   = v.findViewById(R.id.emptyState);
-        fabAdd       = v.findViewById(R.id.fabAdd);
-        edtSearch    = v.findViewById(R.id.edtSearch);
-        btnAddFirst  = v.findViewById(R.id.btnAddFirst);
+        // init firebase
+        db = FirebaseFirestore.getInstance();
+        colCategories = db.collection("categories");
 
-        // Recycler + Adapter (admin mode = true)
+        // bind views
+        recyclerView = v.findViewById(R.id.recyclerViewCategories);
+        progressBar = v.findViewById(R.id.progressBar);
+        swipeRefresh = v.findViewById(R.id.swipeRefresh);
+        emptyState = v.findViewById(R.id.emptyState);
+        fabAdd = v.findViewById(R.id.fabAdd);
+        edtSearch = v.findViewById(R.id.edtSearch);
+        btnAddFirst = v.findViewById(R.id.btnAddFirst);
+
+        // adapter (admin mode = true)
         adapter = new CategoryAdapter(this, true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setHasFixedSize(true);
         recyclerView.setAdapter(adapter);
 
-        // VM
-        vm = new ViewModelProvider(this, new AdminCategoriesViewModel.Factory())
-                .get(AdminCategoriesViewModel.class);
-
-        // Listeners
+        // btn add
         if (fabAdd != null) fabAdd.setOnClickListener(_v -> onAddAction());
         if (btnAddFirst != null) btnAddFirst.setOnClickListener(_v -> onAddAction());
+
+        // swipe refresh: vì mình nghe realtime nên chỉ tắt refresh
         if (swipeRefresh != null) {
-            swipeRefresh.setOnRefreshListener(() -> {
-                // listenAll là realtime nên chỉ cần dừng refresh
-                swipeRefresh.setRefreshing(false);
-            });
+            swipeRefresh.setOnRefreshListener(() -> swipeRefresh.setRefreshing(false));
         }
+
+        // search
         if (edtSearch != null) {
             edtSearch.addTextChangedListener(new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                @Override public void afterTextChanged(Editable s) {}
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
+
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    String q = s == null ? "" : s.toString().trim().toLowerCase(Locale.ROOT);
-                    List<Category> filtered = new ArrayList<>();
-                    for (Category it : list) {
-                        String name = it.getName() == null ? "" : it.getName();
-                        if (name.toLowerCase(Locale.ROOT).contains(q)) filtered.add(it);
-                    }
-                    adapter.submit(filtered);
-                    updateEmptyState();
+                    applyFilter(s == null ? "" : s.toString().trim().toLowerCase(Locale.ROOT));
                 }
             });
         }
 
-        observeCategories();
+        listenCategoriesRealtime();
         return v;
     }
 
-    /** ================= Quan sát dữ liệu từ Firestore ================= */
-    private void observeCategories() {
+    /**
+     * Nghe realtime tất cả danh mục
+     */
+    private void listenCategoriesRealtime() {
         showLoading(true);
-        vm.listenAll().observe(getViewLifecycleOwner(), result -> {
-            switch (result.status) {
-                case LOADING:
-                    showLoading(true);
-                    break;
-                case SUCCESS:
-                    showLoading(false);
+        reg = colCategories
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .addSnapshotListener((snap, e) -> {
+                    if (!isAdded()) return;
+
+                    if (e != null) {
+                        showLoading(false);
+                        toast("Lỗi tải danh mục: " + e.getMessage());
+                        return;
+                    }
                     list.clear();
-                    if (result.data != null) list.addAll(result.data);
-                    // Áp dụng filter hiện tại (nếu có)
+                    if (snap != null) {
+                        for (DocumentSnapshot d : snap.getDocuments()) {
+                            Category c = d.toObject(Category.class);
+                            if (c == null) c = new Category();
+                            // đảm bảo id
+                            c.setId(d.getId());
+                            list.add(c);
+                        }
+                    }
+                    showLoading(false);
+
+                    // áp dụng filter nếu đang search
                     String q = edtSearch != null && edtSearch.getText() != null
                             ? edtSearch.getText().toString().trim().toLowerCase(Locale.ROOT)
                             : "";
                     if (q.isEmpty()) {
                         adapter.submit(list);
                     } else {
-                        List<Category> filtered = new ArrayList<>();
-                        for (Category it : list) {
-                            String name = it.getName() == null ? "" : it.getName();
-                            if (name.toLowerCase(Locale.ROOT).contains(q)) filtered.add(it);
-                        }
-                        adapter.submit(filtered);
+                        applyFilter(q);
                     }
                     updateEmptyState();
-                    break;
-                case ERROR:
-                    showLoading(false);
-                    toast("Lỗi tải danh mục: " + (result.error != null ? result.error.getMessage() : "unknown"));
-                    break;
+                });
+    }
+
+    private void applyFilter(String q) {
+        if (q == null) q = "";
+        q = q.trim().toLowerCase(Locale.ROOT);
+        if (q.isEmpty()) {
+            adapter.submit(list);
+            updateEmptyState();
+            return;
+        }
+        List<Category> filtered = new ArrayList<>();
+        for (Category it : list) {
+            String name = it.getName() == null ? "" : it.getName();
+            if (name.toLowerCase(Locale.ROOT).contains(q)) {
+                filtered.add(it);
             }
-        });
+        }
+        adapter.submit(filtered);
+        updateEmptyState();
     }
 
     private void showLoading(boolean show) {
-        if (progressBar != null)
+        if (progressBar != null) {
             progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void updateEmptyState() {
@@ -162,53 +200,104 @@ public class CategoryManageFragment extends Fragment implements AddActionHandler
         if (recyclerView != null) recyclerView.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
     }
 
-    /** ================= Sự kiện thêm danh mục ================= */
+    /* ================= AddActionHandler ================= */
     @Override
     public void onAddAction() {
         showCategoryDialog(null);
     }
 
-    /** ================= Dialog thêm/sửa danh mục ================= */
+    /* ================= Dialog thêm/sửa danh mục ================= */
     private void showCategoryDialog(@Nullable Category category) {
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout._dialog_category, null);
 
-        TextInputEditText edtName     = dialogView.findViewById(R.id.edtName);
+        TextInputEditText edtName = dialogView.findViewById(R.id.edtName);
         TextInputEditText edtImageUrl = dialogView.findViewById(R.id.edtImageUrl);
-        ImageView imgPreview          = dialogView.findViewById(R.id.imgPreview);
-        MaterialCheckBox cbActive     = dialogView.findViewById(R.id.cbActive);
-        Button btnSave                = dialogView.findViewById(R.id.btnSave);
-        Button btnCancel              = dialogView.findViewById(R.id.btnCancel);
+        ImageView imgPreview = dialogView.findViewById(R.id.imgPreview);
+        MaterialCheckBox cbActive = dialogView.findViewById(R.id.cbActive);
+        Button btnSave = dialogView.findViewById(R.id.btnSave);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        // nút mới
+        Button btnPickBuiltinImage = dialogView.findViewById(R.id.btnPickBuiltinImage);
 
-        // Fill dữ liệu khi sửa
+        // nếu sửa
         if (category != null) {
             if (edtName != null) edtName.setText(category.getName());
             if (edtImageUrl != null) edtImageUrl.setText(category.getImageUrl());
             if (cbActive != null) cbActive.setChecked(category.isActive());
-            Glide.with(requireContext())
-                    .load(category.getImageUrl())
-                    .placeholder(R.drawable.milktea)
-                    .error(R.drawable.milktea)
-                    .into(imgPreview);
+
+            // dùng ImageLoader để support cả url và tên drawable
+            ImageLoader.load(
+                    imgPreview,
+                    category.getImageUrl(),
+                    R.drawable.milktea
+            );
+        } else {
+            imgPreview.setImageResource(R.drawable.milktea);
+            if (cbActive != null) cbActive.setChecked(true);
         }
 
-        // Preview ảnh khi người dùng nhập URL
+        // preview ảnh khi gõ
         if (edtImageUrl != null) {
             edtImageUrl.addTextChangedListener(new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                @Override public void afterTextChanged(Editable s) {}
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
+
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    String url = s == null ? "" : s.toString().trim();
-                    if (!url.isEmpty()) {
-                        Glide.with(requireContext()).load(url)
-                                .placeholder(R.drawable.milktea)
-                                .error(R.drawable.milktea)
-                                .into(imgPreview);
-                    } else {
+                    String val = s == null ? "" : s.toString().trim();
+                    if (val.isEmpty()) {
                         imgPreview.setImageResource(R.drawable.milktea);
+                    } else {
+                        ImageLoader.load(
+                                imgPreview,
+                                val,
+                                R.drawable.milktea
+                        );
                     }
                 }
+            });
+        }
+
+        // ====== PICK ẢNH CÓ SẴN (giống edit profile) ======
+        if (btnPickBuiltinImage != null) {
+            btnPickBuiltinImage.setOnClickListener(v -> {
+                // mảng ảnh demo – anh có thể nối thêm tùy ý
+                final String[] CATE_IMAGES = new String[]{
+                        "milktea_brownsugar",
+                        "milktea_matcha",
+                        "milktea_taro",
+                        "milktea_olong",
+                        "milktea_greenthai",
+                        "milktea_strawberry",
+                        "milktea_chocolate",
+                        "milktea_caramel",
+                        "milktea_mango",
+                        "tea_blacktea",
+                        "ic_milk_tea",
+                        "milktea"
+                };
+
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Chọn ảnh danh mục")
+                        .setItems(CATE_IMAGES, (d, which) -> {
+                            String name = CATE_IMAGES[which];
+                            if (edtImageUrl != null) {
+                                edtImageUrl.setText(name);
+                            }
+                            ImageLoader.load(
+                                    imgPreview,
+                                    name,
+                                    R.drawable.milktea
+                            );
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
             });
         }
 
@@ -220,19 +309,20 @@ public class CategoryManageFragment extends Fragment implements AddActionHandler
         if (btnCancel != null) btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         if (btnSave != null) {
+            AlertDialog finalDialog = dialog;
             btnSave.setOnClickListener(v -> {
                 String name = edtName != null && edtName.getText() != null
-                        ? edtName.getText().toString().trim() : "";
+                        ? edtName.getText().toString().trim()
+                        : "";
                 String imageUrl = edtImageUrl != null && edtImageUrl.getText() != null
-                        ? edtImageUrl.getText().toString().trim() : "";
+                        ? edtImageUrl.getText().toString().trim()
+                        : "";
                 boolean active = cbActive != null && cbActive.isChecked();
 
                 if (name.isEmpty()) {
                     toast("Vui lòng nhập tên danh mục");
                     return;
                 }
-
-                // Chuẩn hoá URL rỗng -> null (document sạch hơn)
                 if (imageUrl.isEmpty()) imageUrl = null;
 
                 Map<String, Object> data = new HashMap<>();
@@ -242,31 +332,11 @@ public class CategoryManageFragment extends Fragment implements AddActionHandler
                 data.put("searchableName", name.toLowerCase(Locale.ROOT));
 
                 if (category == null) {
-                    // Thêm mới
-                    vm.add(data).observe(getViewLifecycleOwner(), r -> {
-                        switch (r.status) {
-                            case SUCCESS:
-                                toast("Đã thêm danh mục");
-                                dialog.dismiss();
-                                break;
-                            case ERROR:
-                                toast("Lỗi thêm: " + (r.error != null ? r.error.getMessage() : "unknown"));
-                                break;
-                        }
-                    });
+                    // thêm mới
+                    addCategory(data, finalDialog);
                 } else {
-                    // Cập nhật
-                    vm.update(category.getId(), data).observe(getViewLifecycleOwner(), r -> {
-                        switch (r.status) {
-                            case SUCCESS:
-                                toast("Đã cập nhật danh mục");
-                                dialog.dismiss();
-                                break;
-                            case ERROR:
-                                toast("Lỗi cập nhật: " + (r.error != null ? r.error.getMessage() : "unknown"));
-                                break;
-                        }
-                    });
+                    // cập nhật
+                    updateCategory(category.getId(), data, finalDialog);
                 }
             });
         }
@@ -274,7 +344,41 @@ public class CategoryManageFragment extends Fragment implements AddActionHandler
         dialog.show();
     }
 
-    /** ================= Sửa / Xóa ================= */
+    /* ================= CRUD trực tiếp Firestore ================= */
+
+    private void addCategory(Map<String, Object> data, AlertDialog dialog) {
+        data.put("createdAt", FieldValue.serverTimestamp());
+        colCategories.add(data)
+                .addOnSuccessListener(doc -> {
+                    toast("Đã thêm danh mục");
+                    dialog.dismiss();
+                })
+                .addOnFailureListener(e ->
+                        toast("Lỗi thêm: " + e.getMessage())
+                );
+    }
+
+    private void updateCategory(String id, Map<String, Object> data, AlertDialog dialog) {
+        colCategories.document(id)
+                .update(data)
+                .addOnSuccessListener(unused -> {
+                    toast("Đã cập nhật danh mục");
+                    dialog.dismiss();
+                })
+                .addOnFailureListener(e ->
+                        toast("Lỗi cập nhật: " + e.getMessage())
+                );
+    }
+
+    private void deleteCategory(String id) {
+        colCategories.document(id)
+                .delete()
+                .addOnSuccessListener(unused -> toast("Đã xóa danh mục"))
+                .addOnFailureListener(e -> toast("Lỗi xóa: " + e.getMessage()));
+    }
+
+    /* ================= callback từ adapter ================= */
+
     @Override
     public void onEdit(Category category) {
         showCategoryDialog(category);
@@ -285,23 +389,21 @@ public class CategoryManageFragment extends Fragment implements AddActionHandler
         new AlertDialog.Builder(requireContext())
                 .setTitle("Xóa danh mục")
                 .setMessage("Bạn có chắc muốn xóa \"" + (category.getName() == null ? "" : category.getName()) + "\" không?")
-                .setPositiveButton("Xóa", (d, w) -> {
-                    vm.delete(category.getId()).observe(getViewLifecycleOwner(), r -> {
-                        switch (r.status) {
-                            case SUCCESS:
-                                toast("Đã xóa danh mục");
-                                break;
-                            case ERROR:
-                                toast("Lỗi xóa: " + (r.error != null ? r.error.getMessage() : "unknown"));
-                                break;
-                        }
-                    });
-                })
+                .setPositiveButton("Xóa", (d, w) -> deleteCategory(category.getId()))
                 .setNegativeButton("Hủy", null)
                 .show();
     }
 
     private void toast(String msg) {
         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (reg != null) {
+            reg.remove();
+            reg = null;
+        }
     }
 }

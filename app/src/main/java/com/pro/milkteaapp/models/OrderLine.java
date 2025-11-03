@@ -12,7 +12,7 @@ public class OrderLine implements Serializable {
 
     private String name;
     private String size;
-    private List<String> toppings;
+    private List<Topping> toppings;  // sửa kiểu toppings sang List<Topping>
     private int quantity;
     private double unitPrice;
     private double lineTotal;
@@ -33,18 +33,16 @@ public class OrderLine implements Serializable {
         Object s = pick(m, "sizeName", "size", "variant");
         ol.size = s == null ? "" : String.valueOf(s);
 
-        // toppings có thể là List<String> hoặc String gộp
+        // toppings: chuyển từ List<Map> thành List<Topping>
         Object tops = m.get("toppings");
-        List<String> topList = new ArrayList<>();
+        List<Topping> topList = new ArrayList<>();
         if (tops instanceof List) {
             for (Object t : (List<?>) tops) {
-                if (t != null) topList.add(String.valueOf(t));
-            }
-        } else if (tops instanceof String) {
-            String[] parts = String.valueOf(tops).split(",");
-            for (String p : parts) {
-                String pp = p.trim();
-                if (!pp.isEmpty()) topList.add(pp);
+                if (t instanceof Map) {
+                    // Ép kiểu an toàn từ Map sang Topping
+                    Topping topping = mapToTopping((Map<String, Object>) t);
+                    topList.add(topping);
+                }
             }
         }
         ol.toppings = topList;
@@ -60,6 +58,26 @@ public class OrderLine implements Serializable {
         ol.lineTotal = lt != null ? toDouble(lt) : (ol.unitPrice * ol.quantity);
 
         return ol;
+    }
+
+    // Chuyển map thành đối tượng Topping
+    private static Topping mapToTopping(Map<String, Object> map) {
+        Topping t = new Topping();
+        Object id = map.get("id");
+        Object name = map.get("name");
+        Object price = map.get("price");
+        t.setId(id == null ? "" : String.valueOf(id));
+        t.setName(name == null ? "" : String.valueOf(name));
+        if (price instanceof Number) {
+            t.setPrice(((Number) price).longValue());
+        } else {
+            try {
+                t.setPrice(Long.parseLong(String.valueOf(price)));
+            } catch (Exception e) {
+                t.setPrice(0L);
+            }
+        }
+        return t;
     }
 
     private static Object pick(Map<String, Object> m, String... keys) {
@@ -82,7 +100,7 @@ public class OrderLine implements Serializable {
     // ===== GETTERS =====
     @NonNull public String getName() { return name == null ? "" : name; }
     @NonNull public String getSize() { return size == null ? "" : size; }
-    @NonNull public List<String> getToppings() { return toppings == null ? new ArrayList<>() : toppings; }
+    @NonNull public List<Topping> getToppings() { return toppings == null ? new ArrayList<>() : toppings; }
     public int getQuantity() { return quantity; }
     public double getUnitPrice() { return unitPrice; }
     public double getLineTotal() { return lineTotal; }
@@ -91,16 +109,21 @@ public class OrderLine implements Serializable {
     @NonNull
     public String buildMeta() {
         StringBuilder sb = new StringBuilder();
-        if (!getSize().isEmpty()) sb.append(getSize());
-        List<String> tops = getToppings();
+
+        // Nếu có size thì xuống dòng ghi "Size: <size>"
+        if (!getSize().isEmpty()) {
+            sb.append("Size: ").append(getSize()).append("\n");
+        }
+
+        // Nếu có topping thì xuống dòng ghi "Topping:" rồi list từng topping xuống dòng, thụt đầu dòng 5-6 spaces
+        List<Topping> tops = getToppings();
         if (!tops.isEmpty()) {
-            if (sb.length() > 0) sb.append(" • ");
             sb.append("Topping: ");
-            for (int i = 0; i < tops.size(); i++) {
-                if (i > 0) sb.append(", ");
-                sb.append(tops.get(i));
+            for (Topping t : tops) {
+                sb.append(" - ").append(t.getName()).append("");
             }
         }
-        return sb.toString();
+
+        return sb.toString().trim();  // trim để tránh xuống dòng thừa cuối cùng
     }
 }

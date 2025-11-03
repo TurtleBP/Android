@@ -1,25 +1,131 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="12dp"
+    android:padding="20dp"
+    android:backgroundTint="@android:color/white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="5dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/gray_200">
 
-    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-        <TextView android:text="Đánh giá đơn hàng" android:textStyle="bold" android:textSize="16sp"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <!-- Tiêu đề -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:text="Đánh giá đơn hàng"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@color/primary"
+            android:gravity="center"
+            android:letterSpacing="0.01"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
-        <RatingBar android:id="@+id/ratingBar" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:numStars="5" android:stepSize="1.0" android:layout_marginTop="8dp"/>
+        <!-- Mô tả nhỏ -->
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:text="Bạn hài lòng với đơn vừa rồi chứ?"
+            android:textSize="13sp"
+            android:textColor="@color/gray_700"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
-        <EditText android:id="@+id/edtReview" android:hint="Nhận xét (tuỳ chọn)"
-            android:layout_marginTop="8dp" android:inputType="textCapSentences|textMultiLine"
-            android:minLines="2" android:maxLines="5" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        <!-- Thanh chia -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_200"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp" />
 
-        <LinearLayout android:orientation="horizontal" android:gravity="end"
-            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnCancel"
-                android:text="Huỷ" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnSubmit"
-                android:text="Gửi" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <!-- Khối rating -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <!-- ⭐ Cho phép chọn sao -->
+            <RatingBar
+                android:id="@+id/ratingBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:numStars="5"
+                android:stepSize="1.0"
+                android:rating="5"
+                android:layout_marginBottom="6dp"
+                android:progressTint="@color/gold"
+                android:secondaryProgressTint="@color/gold"
+                android:progressBackgroundTint="@color/gray_200" />
+
+            <TextView
+                android:id="@+id/tvRatingHint"
+                android:text="5/5 - Rất hài lòng"
+                android:textSize="13sp"
+                android:textColor="@color/gray_700"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
         </LinearLayout>
+
+        <!-- Ô nhận xét -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:hint="Nhận xét (tuỳ chọn)">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtReview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences|textMultiLine"
+                android:minLines="2"
+                android:maxLines="5"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Nút -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancel"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:text="Huỷ"
+                android:textSize="@dimen/define_dimen_14"
+                android:textAllCaps="false"
+                android:textColor="@color/gray_700"
+                app:strokeColor="@color/gray_300"
+                app:strokeWidth="1dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubmit"
+                style="@style/Widget.MaterialComponents.Button"
+                android:text="Gửi"
+                android:textSize="@dimen/define_dimen_14"
+                android:textAllCaps="false"
+                android:layout_marginStart="10dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:backgroundTint="@color/primary"
+                android:textColor="@android:color/white" />
+        </LinearLayout>
+
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

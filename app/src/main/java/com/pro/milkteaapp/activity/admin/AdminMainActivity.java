@@ -40,7 +40,7 @@ public class AdminMainActivity extends AppCompatActivity {
     public static final String EXTRA_ADMIN_TARGET = "admin_tab"; // orders, users, stats, manage
 
     private static final String STATE_SELECTED_TAB = "state_selected_tab";
-    // ✅ Mặc định tab Đơn hàng
+    // mặc định tab Đơn hàng
     private @IdRes int currentTabId = R.id.adminOrders;
 
     private static final String TAG_ORDERS     = "tab_orders";
@@ -55,13 +55,16 @@ public class AdminMainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // nếu chưa đăng nhập thì đá về login
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
-            goToLoginRoot(); return;
+            goToLoginRoot();
+            return;
         }
 
         binding = ActivityAdminMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        // map id bottom-nav -> tag fragment
         idToTag.put(R.id.adminOrders,     TAG_ORDERS);
         idToTag.put(R.id.adminUsers,      TAG_USERS);
         idToTag.put(R.id.adminStatistics, TAG_STATISTICS);
@@ -70,9 +73,14 @@ public class AdminMainActivity extends AppCompatActivity {
         setupToolbar();
         setupBottomNavigation();
 
+        // kiểm tra quyền từ Session trước
         SessionManager sm = new SessionManager(this);
         if (sm.hasCachedRole()) {
-            if (!sm.isAdmin()) { Toast.makeText(this, "Bạn không có quyền truy cập (admin-only)", Toast.LENGTH_SHORT).show(); goToUserRoot(); return; }
+            if (!sm.isAdmin()) {
+                Toast.makeText(this, "Bạn không có quyền truy cập (admin-only)", Toast.LENGTH_SHORT).show();
+                goToUserRoot();
+                return;
+            }
             continueInit(savedInstanceState);
         } else {
             fetchRoleThenInit(sm, savedInstanceState);
@@ -81,14 +89,15 @@ public class AdminMainActivity extends AppCompatActivity {
 
     private void continueInit(@Nullable Bundle savedInstanceState) {
         if (savedInstanceState != null) {
-            // ✅ Khôi phục, default vẫn là Orders nếu chưa có
             currentTabId = savedInstanceState.getInt(STATE_SELECTED_TAB, R.id.adminOrders);
         }
+
         restoreOrCreateFragments();
 
         if (savedInstanceState == null) {
+            // xử lý intent điều hướng sang tab cụ thể
             if (!handleIntent(getIntent())) {
-                // ✅ Lần đầu vào: chọn Đơn hàng
+                // mặc định chọn đơn hàng
                 binding.bottomNavigationView.setSelectedItemId(R.id.adminOrders);
                 switchTo(R.id.adminOrders);
             }
@@ -106,14 +115,22 @@ public class AdminMainActivity extends AppCompatActivity {
                     String role = null;
                     if (doc != null) {
                         Object r = doc.get("role");
-                        if (r instanceof String) role = ((String) r).trim();
-                        else {
+                        if (r instanceof String) {
+                            role = ((String) r).trim();
+                        } else {
+                            // backward-compatible: isAdmin: true
                             Object isAdmin = doc.get("isAdmin");
-                            if (isAdmin instanceof Boolean && (Boolean) isAdmin) role = "admin";
+                            if (isAdmin instanceof Boolean && (Boolean) isAdmin) {
+                                role = "admin";
+                            }
                         }
                     }
                     sm.setRole(role);
-                    if (!sm.isAdmin()) { Toast.makeText(this, "Bạn không có quyền truy cập (admin-only)", Toast.LENGTH_SHORT).show(); goToUserRoot(); return; }
+                    if (!sm.isAdmin()) {
+                        Toast.makeText(this, "Bạn không có quyền truy cập (admin-only)", Toast.LENGTH_SHORT).show();
+                        goToUserRoot();
+                        return;
+                    }
                     continueInit(savedInstanceState);
                 })
                 .addOnFailureListener(e -> {
@@ -122,44 +139,19 @@ public class AdminMainActivity extends AppCompatActivity {
                 });
     }
 
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt(STATE_SELECTED_TAB, currentTabId);
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-        handleIntent(intent);
-    }
-
-    private boolean handleIntent(Intent intent) {
-        if (intent == null) return false;
-        String target = intent.getStringExtra(EXTRA_ADMIN_TARGET);
-        if (target == null) return false;
-
-        @IdRes int menuId = mapTargetToMenuId(target);
-        if (menuId == 0) return false;
-
-        if (binding.bottomNavigationView.getSelectedItemId() == menuId) {
-            switchTo(menuId);
-        } else {
-            binding.bottomNavigationView.setSelectedItemId(menuId);
-        }
-        return true;
-    }
-
     private void setupToolbar() {
         setSupportActionBar(binding.toolbar);
         updateToolbarTitle(currentTabId);
+
+        // để click menu trên toolbar cũng chạy vào onOptionsItemSelected
         binding.toolbar.setOnMenuItemClickListener(this::onOptionsItemSelected);
     }
 
     private void setupBottomNavigation() {
         binding.bottomNavigationView.setOnItemSelectedListener(onNavSelectedListener);
-        binding.bottomNavigationView.setOnItemReselectedListener(item -> { /* optional scroll-to-top */ });
+        binding.bottomNavigationView.setOnItemReselectedListener(item -> {
+            // tuỳ anh muốn scroll-to-top thì implement trong fragment
+        });
     }
 
     private final NavigationBarView.OnItemSelectedListener onNavSelectedListener = item -> {
@@ -199,11 +191,15 @@ public class AdminMainActivity extends AppCompatActivity {
 
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
 
+        // ẩn hết
         for (Map.Entry<String, Fragment> e : tagToFragment.entrySet()) {
             Fragment f = e.getValue();
-            if (f != null && f.isAdded()) ft.hide(f);
+            if (f != null && f.isAdded()) {
+                ft.hide(f);
+            }
         }
 
+        // hiện fragment mục tiêu
         Fragment target = tagToFragment.get(targetTag);
         if (target == null) return false;
         ft.show(target);
@@ -225,17 +221,40 @@ public class AdminMainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private boolean handleIntent(Intent intent) {
+        if (intent == null) return false;
+        String target = intent.getStringExtra(EXTRA_ADMIN_TARGET);
+        if (target == null) return false;
+
+        @IdRes int menuId = mapTargetToMenuId(target);
+        if (menuId == 0) return false;
+
+        if (binding.bottomNavigationView.getSelectedItemId() == menuId) {
+            switchTo(menuId);
+        } else {
+            binding.bottomNavigationView.setSelectedItemId(menuId);
+        }
+        return true;
+    }
+
+    @Override
     public void onBackPressed() {
         Fragment current = tagToFragment.get(idToTag.get(currentTabId));
         if (current != null && current.getChildFragmentManager().popBackStackImmediate()) {
             return;
         }
-        // ✅ Back về tab Đơn hàng nếu đang ở tab khác
+        // back về tab Đơn hàng nếu đang ở tab khác
         if (currentTabId != R.id.adminOrders) {
             binding.bottomNavigationView.setSelectedItemId(R.id.adminOrders);
             switchTo(R.id.adminOrders);
         } else {
-            super.onBackPressed();
+            super .onBackPressed();
         }
     }
 
@@ -255,6 +274,7 @@ public class AdminMainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        // GIỮ NGUYÊN: dùng đúng cái XML anh đã gửi
         getMenuInflater().inflate(R.menu.menu_admin_toolbar, menu);
         return true;
     }
@@ -262,18 +282,28 @@ public class AdminMainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_logout) { logout(); return true; }
-        else if (id == R.id.action_switch_to_user) { goToUserRoot(); return true; }
-        else if (id == R.id.action_refresh) {
-            Fragment f = tagToFragment.get(idToTag.get(currentTabId));
-            if (f instanceof SupportsRefresh) ((SupportsRefresh) f).refresh();
+
+        // CHỈ xử lý những item hiện đang có trong XML
+        if (id == R.id.action_profile) {
+            // TODO: mở màn hình hồ sơ admin
+            Toast.makeText(this, "Mở hồ sơ admin", Toast.LENGTH_SHORT).show();
+            return true;
+        } else if (id == R.id.action_switch_to_user) {
+            goToUserRoot();
+            return true;
+        } else if (id == R.id.action_logout) {
+            logout();
             return true;
         }
+
+        // KHÔNG xử lý action_refresh, action_sort ở đây nữa
         return super.onOptionsItemSelected(item);
     }
 
     private void logout() {
-        try { FirebaseAuth.getInstance().signOut(); } catch (Throwable ignored) {}
+        try {
+            FirebaseAuth.getInstance().signOut();
+        } catch (Throwable ignored) {}
         new SessionManager(this).clear();
         goToLoginRoot();
     }
@@ -289,6 +319,7 @@ public class AdminMainActivity extends AppCompatActivity {
         };
     }
 
+    // interface để fragment nào thích thì implement
     public interface ScrollToTop { void scrollToTop(); }
     public interface SupportsRefresh { void refresh(); }
 }

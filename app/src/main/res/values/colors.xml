@@ -3,6 +3,7 @@
     <color name="colorPrimary">#5D4037</color>
     <color name="colorPrimaryDark">#5D4037</color>
     <color name="colorAccent">#CACACA</color>
+    <color name="gold">#FFD700</color>
 
     <color name="textColorPrimary">#5D4037</color>
     <color name="textColorSecondary">#555555</color>

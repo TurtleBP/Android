@@ -13,49 +13,80 @@
         android:orientation="vertical"
         android:padding="12dp">
 
+        <!-- Avatar + tên -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:orientation="vertical"
+            android:padding="12dp">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/imgAvatar"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_profile" />
+            <!-- Avatar + tên -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/tvName"
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/imgAvatar"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.Circle"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_profile" />
+
+                <TextView
+                    android:id="@+id/tvName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Nguyễn Văn A"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Rating + mô tả -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Nguyễn Văn A"
-                android:textColor="@color/black"
-                android:textStyle="bold"
-                android:textSize="14sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <RatingBar
+                    android:id="@+id/ratingBar"
+                    style="?android:attr/ratingBarStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:numStars="5"
+                    android:stepSize="1"
+                    android:isIndicator="true"
+                    android:progressTint="@color/gold"
+                    android:secondaryProgressTint="@color/gold"
+                    android:progressBackgroundTint="@color/gray_200" />
+
+                <TextView
+                    android:id="@+id/tvRatingDesc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Rất hài lòng 😍"
+                    android:textSize="12sp"
+                    android:textColor="@color/gray_700" />
+            </LinearLayout>
+
+            <!-- Bình luận -->
+            <TextView
+                android:id="@+id/tvComment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Trà sữa rất ngon, giao hàng nhanh!"
+                android:textColor="@color/gray_700"
+                android:textSize="13sp" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvComment"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Trà sữa rất ngon, giao hàng nhanh!"
-            android:textColor="@color/gray_700"
-            android:textSize="13sp" />
 
-        <RatingBar
-            android:id="@+id/ratingBar"
-            style="?android:attr/ratingBarStyleSmall"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:numStars="5"
-            android:stepSize="1"
-            android:rating="4"
-            android:isIndicator="true" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -1,29 +1,24 @@
 package com.pro.milkteaapp.adapter;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.pro.milkteaapp.R;
-import com.pro.milkteaapp.databinding.ItemCartBinding;
 import com.pro.milkteaapp.models.CartItem;
 import com.pro.milkteaapp.models.Products;
-import com.pro.milkteaapp.models.SelectedTopping;
-import com.pro.milkteaapp.utils.ImageUtils;
+import com.pro.milkteaapp.utils.ImageLoader;
 import com.pro.milkteaapp.utils.MoneyUtils;
 
 import java.util.List;
 
 public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
-    private final Context context;
-    private final List<CartItem> cartItems;
-    private final OnItemActionClickListener listener;
 
     public interface OnItemActionClickListener {
         void onItemRemoved(int position);
@@ -31,89 +26,94 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
         void onQuantityDecreased(int position);
     }
 
+    private final Context context;
+    private final List<CartItem> cartItems;
+    private final OnItemActionClickListener listener;
+
     public CartAdapter(Context context, List<CartItem> cartItems, OnItemActionClickListener listener) {
         this.context = context;
         this.cartItems = cartItems;
         this.listener = listener;
-        setHasStableIds(true);
-    }
-
-    @Override
-    public long getItemId(int position) {
-        CartItem ci = cartItems.get(position);
-        StringBuilder key = new StringBuilder();
-        key.append(ci.getProductId()).append("|").append(ci.getSize()).append("|");
-        List<SelectedTopping> ts = ci.getToppings();
-        if (ts != null) for (SelectedTopping t : ts) key.append(t.id).append(",");
-        return key.toString().hashCode();
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        ItemCartBinding binding = ItemCartBinding.inflate(LayoutInflater.from(context), parent, false);
-        return new ViewHolder(binding);
+        View v = LayoutInflater.from(context).inflate(R.layout.item_cart, parent, false);
+        return new ViewHolder(v);
     }
 
-    @SuppressLint("SetTextI18n")
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        CartItem cartItem = cartItems.get(position);
-        Products mt = cartItem.getMilkTea();
+    public void onBindViewHolder(@NonNull ViewHolder h, int position) {
+        CartItem item = cartItems.get(position);
+        Products p = item.getMilkTea(); // để tương thích code cũ
 
-        holder.binding.cartItemName.setText(mt.getName());
-        holder.binding.cartItemQuantity.setText(String.valueOf(cartItem.getQuantity()));
+        // ===== ẢNH =====
+        // quan trọng: dùng helper của anh để xử lý cả 3 trường hợp
+        // 1) "https://..." 2) "drawable:ten_anh" 3) "ten_anh"
+        String imageSource = item.getImageUrl();          // lấy từ CartItem (đã wrap từ product)
+        ImageLoader.load(h.cartItemImage, imageSource, R.drawable.ic_milk_tea);
 
-        // Size
-        String size = cartItem.getSize();
-        if (!TextUtils.isEmpty(size)) {
-            holder.binding.cartItemSize.setVisibility(View.VISIBLE);
-            holder.binding.cartItemSize.setText("Size: " + size);
-        } else holder.binding.cartItemSize.setVisibility(View.GONE);
+        // ===== TÊN =====
+        h.cartItemName.setText(p != null ? p.getName() : "Sản phẩm");
 
-        // Toppings (nhiều)
-        String toppingLabel = cartItem.getToppingsLabel();
-        if (!TextUtils.isEmpty(toppingLabel) && !"Không".equals(toppingLabel)) {
-            holder.binding.cartItemTopping.setVisibility(View.VISIBLE);
-            holder.binding.cartItemTopping.setText("Topping: " + toppingLabel);
-        } else holder.binding.cartItemTopping.setVisibility(View.GONE);
+        // ===== SIZE =====
+        h.cartItemSize.setText(item.getSize());
 
-        holder.binding.cartItemTotal.setText(MoneyUtils.formatVnd(cartItem.getTotalPrice()));
-
-        // Ảnh (drawable name)
-        String imageName = mt.getImageUrl();
-        if (!TextUtils.isEmpty(imageName)) {
-            int resId = ImageUtils.getImageResId(context, imageName);
-            holder.binding.cartItemImage.setImageResource(resId != 0 ? resId : R.mipmap.ic_launcher);
+        // ===== TOPPING =====
+        if (item.getToppings() != null && !item.getToppings().isEmpty()) {
+            StringBuilder sb = new StringBuilder("Topping: ");
+            for (int i = 0; i < item.getToppings().size(); i++) {
+                sb.append(item.getToppings().get(i).name);
+                if (i < item.getToppings().size() - 1) sb.append(", ");
+            }
+            h.cartItemTopping.setText(sb.toString());
+            h.cartItemTopping.setVisibility(View.VISIBLE);
         } else {
-            holder.binding.cartItemImage.setImageResource(R.mipmap.ic_launcher);
+            h.cartItemTopping.setVisibility(View.GONE);
         }
 
-        // Clicks
-        holder.binding.deleteButton.setOnClickListener(v -> {
-            if (listener != null) {
-                int pos = holder.getBindingAdapterPosition();
-                if (pos != RecyclerView.NO_POSITION) listener.onItemRemoved(pos);
-            }
+        // ===== NOTE: CartItem KHÔNG CÓ NOTE → ẨN =====
+        h.cartItemNote.setVisibility(View.GONE);
+
+        // ===== SỐ LƯỢNG + THÀNH TIỀN =====
+        h.cartItemQuantity.setText(String.valueOf(item.getQuantity()));
+        h.cartItemTotal.setText(MoneyUtils.formatVnd(item.getTotalPrice()));
+
+        // ===== ACTIONS =====
+        h.incrementButton.setOnClickListener(v -> {
+            if (listener != null) listener.onQuantityIncreased(h.getBindingAdapterPosition());
         });
-        holder.binding.incrementButton.setOnClickListener(v -> {
-            if (listener != null) {
-                int pos = holder.getBindingAdapterPosition();
-                if (pos != RecyclerView.NO_POSITION) listener.onQuantityIncreased(pos);
-            }
+        h.decrementButton.setOnClickListener(v -> {
+            if (listener != null) listener.onQuantityDecreased(h.getBindingAdapterPosition());
         });
-        holder.binding.decrementButton.setOnClickListener(v -> {
-            if (listener != null) {
-                int pos = holder.getBindingAdapterPosition();
-                if (pos != RecyclerView.NO_POSITION) listener.onQuantityDecreased(pos);
-            }
+        h.deleteButton.setOnClickListener(v -> {
+            if (listener != null) listener.onItemRemoved(h.getBindingAdapterPosition());
         });
     }
 
-    @Override public int getItemCount() { return cartItems.size(); }
+    @Override
+    public int getItemCount() {
+        return cartItems != null ? cartItems.size() : 0;
+    }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        private final ItemCartBinding binding;
-        public ViewHolder(@NonNull ItemCartBinding binding) { super(binding.getRoot()); this.binding = binding; }
+
+        ImageView cartItemImage, incrementButton, decrementButton, deleteButton;
+        TextView cartItemName, cartItemSize, cartItemTopping, cartItemNote, cartItemQuantity, cartItemTotal;
+
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            cartItemImage = itemView.findViewById(R.id.cartItemImage);
+            cartItemName = itemView.findViewById(R.id.cartItemName);
+            cartItemSize = itemView.findViewById(R.id.cartItemSize);
+            cartItemTopping = itemView.findViewById(R.id.cartItemTopping);
+            cartItemNote = itemView.findViewById(R.id.cartItemNote);
+            cartItemQuantity = itemView.findViewById(R.id.cartItemQuantity);
+            cartItemTotal = itemView.findViewById(R.id.cartItemTotal);
+            incrementButton = itemView.findViewById(R.id.incrementButton);
+            decrementButton = itemView.findViewById(R.id.decrementButton);
+            deleteButton = itemView.findViewById(R.id.deleteButton);
+        }
     }
 }

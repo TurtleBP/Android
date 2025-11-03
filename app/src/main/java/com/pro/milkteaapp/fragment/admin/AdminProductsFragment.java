@@ -7,16 +7,16 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.*;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Lifecycle;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -27,7 +27,6 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.pro.milkteaapp.R;
@@ -38,12 +37,13 @@ import com.pro.milkteaapp.handler.AddActionHandler;
 import com.pro.milkteaapp.models.Products;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-/** Fragment quản trị sản phẩm: KHÔNG dùng ViewModel/Repository, gọi Firestore trực tiếp. */
+/**
+ * Fragment quản trị sản phẩm: KHÔNG dùng ViewModel/Repository, gọi Firestore trực tiếp.
+ * Bản này KHÔNG inflate menu riêng để tránh trùng với menu của AdminMainActivity.
+ */
 public class AdminProductsFragment extends Fragment
         implements AdminProductAdapter.OnProductActionListener,
         AdminMainActivity.ScrollToTop,
@@ -69,6 +69,9 @@ public class AdminProductsFragment extends Fragment
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private ListenerRegistration realtimeReg;
 
+    // Cờ để biết view đã được inflate chưa
+    private boolean viewInited = false;
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,7 +87,9 @@ public class AdminProductsFragment extends Fragment
 
         if (!isAdminRole) {
             Toast.makeText(requireContext(), "Bạn không có quyền truy cập (admin-only).", Toast.LENGTH_SHORT).show();
-            if (getActivity() != null) getActivity().getOnBackPressedDispatcher().onBackPressed();
+            if (getActivity() != null) {
+                getActivity().getOnBackPressedDispatcher().onBackPressed();
+            }
             return new LinearLayout(requireContext());
         }
 
@@ -92,10 +97,12 @@ public class AdminProductsFragment extends Fragment
         setupRecyclerView();
         setupSearch();
         setupSwipeToRefresh();
-        attachMenuProvider();
+        // KHÔNG attach menu provider ở đây nữa, để Activity lo menu
 
-        // Tải một lần ban đầu (tuỳ chọn)
+        // Tải một lần ban đầu
         loadOnce();
+
+        viewInited = true;
 
         return view;
     }
@@ -136,29 +143,21 @@ public class AdminProductsFragment extends Fragment
         swipeRefresh.setOnRefreshListener(this::refresh);
     }
 
-    private void attachMenuProvider() {
-        requireActivity().addMenuProvider(new MenuProvider() {
-            @Override public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-                inflater.inflate(R.menu.menu_admin_products, menu);
-            }
-            @Override
-            public boolean onMenuItemSelected(@NonNull MenuItem item) {
-                if (item.getItemId() == R.id.action_sort) { showSortDialog(); return true; }
-                if (item.getItemId() == R.id.action_refresh) { refresh(); return true; }
-                return false;
-            }
-        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
-    }
-
     // ====== Vòng đời: bật/tắt realtime ======
     @Override public void onStart() {
         super.onStart();
-        startRealtime();
+        startRealtimeIfReady();
     }
 
     @Override public void onStop() {
         super.onStop();
         stopRealtime();
+    }
+
+    private void startRealtimeIfReady() {
+        if (!isAdminRole) return;
+        if (!viewInited) return;
+        startRealtime();
     }
 
     private void startRealtime() {
@@ -187,7 +186,6 @@ public class AdminProductsFragment extends Fragment
             for (DocumentSnapshot d : snap.getDocuments()) {
                 Products p = d.toObject(Products.class);
                 if (p != null) {
-                    // đảm bảo có id để cập nhật/xoá
                     if (p.getId() == null || p.getId().trim().isEmpty()) {
                         p.setId(d.getId());
                     }
@@ -195,12 +193,15 @@ public class AdminProductsFragment extends Fragment
                 }
             }
         }
-        filterProducts(lastSearch);
+        if (adapter != null) {
+            filterProducts(lastSearch);
+        }
         showLoading(false);
     };
 
     // ====== Tải một lần (pull) ======
     private void loadOnce() {
+        if (!isAdded()) return;
         showLoading(true);
         db.collection("products").get()
                 .addOnSuccessListener(snap -> {
@@ -214,7 +215,9 @@ public class AdminProductsFragment extends Fragment
                             productList.add(p);
                         }
                     }
-                    filterProducts(lastSearch);
+                    if (adapter != null) {
+                        filterProducts(lastSearch);
+                    }
                 })
                 .addOnFailureListener(e -> toast("Lỗi tải dữ liệu: " + e.getMessage()))
                 .addOnCompleteListener(t -> showLoading(false));
@@ -241,6 +244,7 @@ public class AdminProductsFragment extends Fragment
 
     // ====== UI helpers ======
     private void filterProducts(String query) {
+        if (adapter == null) return;
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         if (q.isEmpty()) {
             adapter.updateList(productList);
@@ -260,6 +264,7 @@ public class AdminProductsFragment extends Fragment
     }
 
     private void checkEmptyState() {
+        if (adapter == null) return;
         boolean isEmpty = adapter.getItemCount() == 0;
         if (emptyState != null) emptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         if (recyclerView != null) recyclerView.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
@@ -270,35 +275,6 @@ public class AdminProductsFragment extends Fragment
             progressBar.setIndeterminate(true);
             progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
         }
-    }
-
-    private void showSortDialog() {
-        final String[] options = {"Mới nhất", "Cũ nhất", "Giá tăng dần", "Giá giảm dần", "Tên A-Z", "Tồn kho ít nhất"};
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Sắp xếp sản phẩm")
-                .setItems(options, (d, which) -> {
-                    List<Products> current = new ArrayList<>(adapter.getCurrentList());
-
-                    Comparator<Products> byPriceAsc =
-                            Comparator.comparing(Products::getPrice, Comparator.nullsLast(Double::compare));
-                    Comparator<Products> byPriceDesc = byPriceAsc.reversed();
-                    Comparator<Products> byNameAsc =
-                            Comparator.comparing(p -> safe(p.getName()).toLowerCase(Locale.ROOT));
-                    Comparator<Products> byStockLeast =
-                            Comparator.comparing(Products::getStock, Comparator.nullsLast(Integer::compare));
-
-                    switch (which) {
-                        case 0: /* Mới nhất (giữ nguyên, giả sử Firestore trả newest trước) */ break;
-                        case 1: Collections.reverse(current); break; // Cũ nhất
-                        case 2: current.sort(byPriceAsc); break;
-                        case 3: current.sort(byPriceDesc); break;
-                        case 4: current.sort(byNameAsc); break;
-                        case 5: current.sort(byStockLeast); break;
-                    }
-                    adapter.updateList(current);
-                    checkEmptyState();
-                })
-                .show();
     }
 
     // ====== Callbacks từ Activity/Adapter ======
@@ -334,7 +310,6 @@ public class AdminProductsFragment extends Fragment
         showEditStockDialog(product);
     }
 
-    /** Dialog chỉnh tồn kho → updateProductStock(...) */
     private void showEditStockDialog(Products product) {
         if (getContext() == null || product == null) return;
 
@@ -401,24 +376,24 @@ public class AdminProductsFragment extends Fragment
         dialog.show();
     }
 
-    // ====== Interface từ Activity ======
     @Override public void scrollToTop() {
         if (recyclerView != null) recyclerView.smoothScrollToPosition(0);
     }
 
     @Override public void refresh() {
         if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-        // Có thể pull lại 1 lần cho chắc, hoặc chỉ filter lại current list
         loadOnce();
     }
 
-    // ====== Helpers ======
     private boolean isAdmin() {
         SharedPreferences p = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         return "admin".equalsIgnoreCase(p.getString("role", "user"));
     }
+
     private void toast(String msg) { Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show(); }
+
     private String safe(String s) { return s == null ? "" : s; }
+
     private int parseIntSafe(String s, int fallback) {
         try { return Integer.parseInt(s.trim()); } catch (Exception e) { return fallback; }
     }
@@ -432,5 +407,6 @@ public class AdminProductsFragment extends Fragment
         swipeRefresh = null;
         emptyState = null;
         progressBar = null;
+        viewInited = false;
     }
 }

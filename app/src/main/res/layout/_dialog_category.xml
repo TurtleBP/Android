@@ -19,11 +19,11 @@
             android:layout_height="wrap_content"/>
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- URL ảnh -->
+    <!-- URL / tên ảnh -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilImageUrl"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:hint="Đường dẫn ảnh (URL)"
+        android:hint="Đường dẫn ảnh (URL) hoặc tên drawable"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp">
@@ -44,7 +44,7 @@
         android:checked="true"
         android:layout_marginTop="8dp"/>
 
-    <!-- Xem trước ảnh category (load từ URL bằng Glide trong Fragment) -->
+    <!-- Xem trước ảnh category -->
     <ImageView
         android:id="@+id/imgPreview"
         android:layout_width="match_parent"
@@ -53,6 +53,14 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/app_name"
         android:src="@drawable/milktea" />
+
+    <!-- nút chọn ảnh có sẵn -->
+    <Button
+        android:id="@+id/btnPickBuiltinImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chọn ảnh có sẵn"
+        android:layout_marginTop="8dp" />
 
     <!-- Hàng nút Hủy / Lưu -->
     <LinearLayout
