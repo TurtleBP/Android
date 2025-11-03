@@ -246,39 +246,47 @@ public class ProfileFragment extends Fragment {
     }
 
     private void applyTierVisual(@NonNull String tier) {
-        // View cần dùng
         MaterialCardView card = binding.cardLoyalty;
         ImageView imgCrown = null;
         TextView tvBadge = null;
         TextView tvTierText = binding.tvLoyaltyTier;
 
-        // Optional views (có thể null nếu không khai báo trong layout)
         View vCrownImg = binding.getRoot().findViewById(R.id.imgTierCrown);
         if (vCrownImg instanceof ImageView) imgCrown = (ImageView) vCrownImg;
 
         View vBadge = binding.getRoot().findViewById(R.id.tvTierBadge);
         if (vBadge instanceof TextView) tvBadge = (TextView) vBadge;
 
-        // Áp màu cơ bản (viền card, badge, tint crown/image, text tier)
+        // Style màu (không liên quan Lottie)
         TierStyleUtil.apply(requireContext(), tier, card, imgCrown, tvBadge, tvTierText);
 
-        // Nếu có Lottie view -> chỉ dùng RAW (không gọi assets để tránh crash)
+        // Lottie cạnh tên user
         View vLottie = binding.getRoot().findViewById(R.id.lottieCrown);
         if (vLottie instanceof LottieAnimationView lottie) {
-            if ("Vàng".equals(tier)) {
-                // File đã đặt ở res/raw/crown_gold.json  -> resource id: R.raw.crown_gold
-                lottie.cancelAnimation();
-                lottie.setAnimation(R.raw.crown_gold);
+            int resId = getCrownResForTier(tier);
+            lottie.cancelAnimation();
+            if (resId != 0) {
+                lottie.setAnimation(resId);
                 lottie.setRepeatCount(LottieDrawable.INFINITE);
                 lottie.playAnimation();
                 lottie.setVisibility(View.VISIBLE);
-                if (imgCrown != null) imgCrown.setVisibility(View.GONE);
+                if (imgCrown != null) imgCrown.setVisibility(View.GONE); // ẩn fallback trong card
             } else {
-                lottie.cancelAnimation();
                 lottie.setVisibility(View.GONE);
                 if (imgCrown != null) imgCrown.setVisibility(View.VISIBLE);
             }
         }
+    }
+
+    /** Map tier -> raw res (hỗ trợ cả VI/EN). Trả 0 nếu không khớp. */
+    private int getCrownResForTier(@NonNull String tier) {
+        String t = tier.trim().toLowerCase();
+        return switch (t) {
+            case "vàng", "gold" -> R.raw.crown_gold;
+            case "bạc", "silver" -> R.raw.crown_silver;
+            case "đồng", "dong", "bronze" -> R.raw.crown_bronze;
+            default -> 0;
+        };
     }
 
     private void showLoading(boolean show) {

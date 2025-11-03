@@ -4,10 +4,6 @@
     <color name="tier_bronze_bg">#CD7F32</color>
     <color name="tier_bronze_dark">#9C5F26</color>
 
-    <!-- Silver / Bạc -->
-    <color name="tier_silver_bg">#C0C0C0</color>
-    <color name="tier_silver_dark">#8E8E8E</color>
-
     <!-- Gold / Vàng -->
     <color name="tier_gold_bg">#FFD700</color>
     <color name="tier_gold_dark">#C7A600</color>
@@ -15,4 +11,10 @@
     <!-- Unrank -->
     <color name="tier_unrank_bg">#9E9E9E</color>
     <color name="tier_unrank_dark">#6E6E6E</color>
+
+    <!-- Silver / Bạc - Xanh pha lê -->
+    <color name="tier_silver_bg">#A0D8EF</color>      <!-- Màu nền xanh pha lê nhạt -->
+    <color name="tier_silver_dark">#4DA6C8</color>   <!-- Màu viền hoặc chữ đậm hơn -->
+    <color name="tier_silver_text">#006B8F</color>   <!-- Màu chữ xanh pha lê -->
+
 </resources>

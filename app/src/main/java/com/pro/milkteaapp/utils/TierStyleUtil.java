@@ -16,42 +16,32 @@ public final class TierStyleUtil {
 
     private TierStyleUtil(){}
 
-    public static class TierColors {
-        @ColorInt public final int bg;
-        @ColorInt public final int dark;
-        public final String label;
-        public TierColors(@ColorInt int bg, @ColorInt int dark, String label) {
-            this.bg = bg; this.dark = dark; this.label = label;
-        }
+    public record TierColors(@ColorInt int bg, @ColorInt int dark, String label) {
     }
 
     public static @NonNull TierColors resolve(Context c, @NonNull String tier) {
-        switch (tier) {
-            case "Vàng":
-                return new TierColors(
-                        c.getColor(R.color.tier_gold_bg),
-                        c.getColor(R.color.tier_gold_dark),
-                        "Vàng"
-                );
-            case "Bạc":
-                return new TierColors(
-                        c.getColor(R.color.tier_silver_bg),
-                        c.getColor(R.color.tier_silver_dark),
-                        "Bạc"
-                );
-            case "Đồng":
-                return new TierColors(
-                        c.getColor(R.color.tier_bronze_bg),
-                        c.getColor(R.color.tier_bronze_dark),
-                        "Đồng"
-                );
-            default:
-                return new TierColors(
-                        c.getColor(R.color.tier_unrank_bg),
-                        c.getColor(R.color.tier_unrank_dark),
-                        "Chưa xếp hạng"
-                );
-        }
+        return switch (tier) {
+            case "Vàng" -> new TierColors(
+                    c.getColor(R.color.tier_gold_bg),
+                    c.getColor(R.color.tier_gold_dark),
+                    "Vàng"
+            );
+            case "Bạc" -> new TierColors(
+                    c.getColor(R.color.tier_silver_bg),
+                    c.getColor(R.color.tier_silver_dark),
+                    "Bạc"
+            );
+            case "Đồng" -> new TierColors(
+                    c.getColor(R.color.tier_bronze_bg),
+                    c.getColor(R.color.tier_bronze_dark),
+                    "Đồng"
+            );
+            default -> new TierColors(
+                    c.getColor(R.color.tier_unrank_bg),
+                    c.getColor(R.color.tier_unrank_dark),
+                    "Chưa xếp hạng"
+            );
+        };
     }
 
     /** Áp style cho card + crown + badge + text tier */
