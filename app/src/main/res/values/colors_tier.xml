@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bronze / Đồng -->
+    <color name="tier_bronze_bg">#CD7F32</color>
+    <color name="tier_bronze_dark">#9C5F26</color>
+
+    <!-- Silver / Bạc -->
+    <color name="tier_silver_bg">#C0C0C0</color>
+    <color name="tier_silver_dark">#8E8E8E</color>
+
+    <!-- Gold / Vàng -->
+    <color name="tier_gold_bg">#FFD700</color>
+    <color name="tier_gold_dark">#C7A600</color>
+
+    <!-- Unrank -->
+    <color name="tier_unrank_bg">#9E9E9E</color>
+    <color name="tier_unrank_dark">#6E6E6E</color>
+</resources>

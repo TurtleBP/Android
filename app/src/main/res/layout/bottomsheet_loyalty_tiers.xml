@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Khu hiện trạng -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tình trạng hiện tại"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvCurrentTier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chưa xếp hạng"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginTop="6dp" />
+
+        <TextView
+            android:id="@+id/tvCurrentPoints"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="0 điểm tích lũy"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/tvNextInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Còn 0 điểm để lên hạng…"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Quyền lợi hiện tại -->
+        <TextView
+            android:id="@+id/tvBenefitsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Quyền lợi cấp hiện tại"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvBenefitsCurrent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:layout_marginTop="6dp" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Quyền lợi hạng kế tiếp -->
+        <TextView
+            android:id="@+id/tvNextBenefitsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lên hạng tiếp theo bạn sẽ có"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvBenefitsNext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:layout_marginTop="6dp" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Bảng lộ trình thăng hạng -->
+        <TextView
+            android:id="@+id/tvRoadmapTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bảng lộ trình thăng hạng"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvRuleUnrank"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="0–99: Chưa xếp hạng"
+            android:layout_marginTop="6dp" />
+
+        <TextView
+            android:id="@+id/tvRuleBronze"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="100–399: Đồng (giảm 5%)"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/tvRuleSilver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="400–999: Bạc (giảm 10%)"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/tvRuleGold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="≥1000: Vàng (giảm 20%)"
+            android:layout_marginTop="4dp" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="8dp" />
+    </LinearLayout>
+</ScrollView>
