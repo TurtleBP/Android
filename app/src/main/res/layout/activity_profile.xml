@@ -124,7 +124,7 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- Header + Badge (đã bỏ Lottie khỏi đây) -->
+                    <!-- Header: title bên trái (weight 1) + nhóm Badge & Crown bên phải (kề nhau) -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -140,75 +140,64 @@
                             android:textStyle="bold"
                             android:textColor="@color/black" />
 
-                        <TextView
-                            android:id="@+id/tvTierBadge"
+                        <!-- NHÓM BÊN PHẢI: Badge + Crown (luôn kề nhau) -->
+                        <LinearLayout
+                            android:id="@+id/rightBadgeCrownGroup"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="4dp"
-                            android:text=""
-                            android:textStyle="bold"
-                            android:textColor="@color/white"
-                            android:background="@drawable/bg_tier_badge"
-                            android:layout_marginEnd="8dp"/>
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:translationX="-30dp">
 
-                        <!-- Fallback crown icon trong card (vẫn giữ để TierStyleUtil có thể tint/ẩn hiện) -->
-                        <ImageView
-                            android:id="@+id/imgTierCrown"
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@string/app_name"
-                            android:src="@drawable/ic_crown"
-                            app:tint="@color/gray_500"/>
+                            <TextView
+                                android:id="@+id/tvTierBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text=""
+                                android:textStyle="bold"
+                                android:textColor="@color/white"
+                                android:background="@drawable/bg_tier_badge" />
+
+                            <ImageView
+                                android:id="@+id/imgTierCrown"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_marginStart="8dp"
+                                android:contentDescription="@string/app_name"
+                                android:src="@drawable/ic_crown"
+                                app:tint="@color/gray_500" />
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <!-- 3 dòng số liệu -->
+
+                    <!-- Điểm hạng + nút Xem (cùng hàng, căn giữa) -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:layout_marginTop="12dp"
-                        android:weightSum="3">
-
-                        <!-- Hạng -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_weight="1">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Hạng"
-                                android:textColor="@color/black"
-                                android:textStyle="bold"
-                                android:textSize="12sp" />
-
-                            <TextView
-                                android:id="@+id/tvLoyaltyTier"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text=""
-                                android:textColor="@color/primary"
-                                android:layout_marginTop="2dp" />
-                        </LinearLayout>
+                        android:weightSum="2"
+                        android:gravity="center_vertical">
 
                         <!-- Điểm hạng -->
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical"
                             android:layout_weight="1"
-                            android:paddingHorizontal="4dp">
+                            android:orientation="vertical"
+                            android:paddingHorizontal="4dp"
+                            android:gravity="center_horizontal">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Điểm hạng"
+                                android:text="Điểm tích lũy"
                                 android:textColor="@color/black"
                                 android:textStyle="bold"
-                                android:textSize="12sp" />
+                                android:textSize="12sp"
+                                android:textAlignment="center" />
 
                             <TextView
                                 android:id="@+id/tvLoyaltyPoints"
@@ -216,67 +205,25 @@
                                 android:layout_height="wrap_content"
                                 android:text=""
                                 android:textColor="@color/black"
-                                android:layout_marginTop="2dp" />
+                                android:layout_marginTop="2dp"
+                                android:textAlignment="center" />
                         </LinearLayout>
 
-                        <!-- Điểm đổi quà -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_weight="1">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Điểm đổi quà"
-                                android:textColor="@color/black"
-                                android:textStyle="bold"
-                                android:textSize="12sp" />
-
-                            <TextView
-                                android:id="@+id/tvRewardPoints"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text=""
-                                android:textColor="@color/black"
-                                android:layout_marginTop="2dp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- 2 nút -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="14dp"
-                        android:gravity="center_vertical">
-
+                        <!-- Nút xem bên phải -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnViewMember"
                             style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minLines="2"
-                            android:text="Xem cấp thành viên"
-                            android:textAllCaps="false" />
-
-                        <Space
-                            android:layout_width="10dp"
-                            android:layout_height="wrap_content" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRedeem"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:minLines="2"
-                            android:text="Đổi quà"
+                            android:text="Xem"
                             android:textAllCaps="false"
-                            android:backgroundTint="@color/primary"
-                            android:textColor="@color/white" />
+                            android:textSize="13sp"
+                            android:layout_marginStart="8dp"
+                            android:paddingHorizontal="12dp"
+                            android:layout_gravity="center_vertical" />
                     </LinearLayout>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

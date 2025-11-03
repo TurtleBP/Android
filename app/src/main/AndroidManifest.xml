@@ -80,7 +80,6 @@
             android:name=".activity.admin.AdminOrderDetailActivity"
             android:exported="false" />
         <activity android:name=".activity.LoyaltyStatusActivity" />
-        <activity android:name=".activity.LoyaltyRedeemActivity" />
 
 
         <!-- Admin product editor -->

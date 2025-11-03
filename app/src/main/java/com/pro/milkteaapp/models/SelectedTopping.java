@@ -26,4 +26,8 @@ public class SelectedTopping implements Serializable {
         m.put("price", price);
         return m;
     }
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public long getPrice() { return price; }
+
 }

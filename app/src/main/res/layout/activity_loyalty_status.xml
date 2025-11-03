@@ -10,6 +10,7 @@
         android:layout_height="?attr/actionBarSize"
         android:title="Thành viên"
         app:navigationIcon="@drawable/ic_arrow_back"
+        app:navigationIconTint="@color/white"
         app:titleTextColor="@android:color/white"
         android:background="@color/primary" />
 

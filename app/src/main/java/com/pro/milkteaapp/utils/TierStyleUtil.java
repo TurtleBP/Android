@@ -1,12 +1,15 @@
 package com.pro.milkteaapp.utils;
 
 import android.content.Context;
-import android.graphics.PorterDuff;
+import android.content.res.ColorStateList;
+import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
+import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.core.widget.ImageViewCompat;
 
 import com.google.android.material.card.MaterialCardView;
 import com.pro.milkteaapp.R;
@@ -14,10 +17,9 @@ import com.pro.milkteaapp.R;
 /** Gắn màu & nhãn theo cấp: Chưa xếp hạng / Đồng / Bạc / Vàng */
 public final class TierStyleUtil {
 
-    private TierStyleUtil(){}
+    private TierStyleUtil() {}
 
-    public record TierColors(@ColorInt int bg, @ColorInt int dark, String label) {
-    }
+    public record TierColors(@ColorInt int bg, @ColorInt int dark, String label) {}
 
     public static @NonNull TierColors resolve(Context c, @NonNull String tier) {
         return switch (tier) {
@@ -44,7 +46,7 @@ public final class TierStyleUtil {
         };
     }
 
-    /** Áp style cho card + crown + badge + text tier */
+    /** Áp style cho card + crown + badge + text tier (không đụng vào visibility của crown) */
     public static void apply(Context c,
                              @NonNull String tier,
                              MaterialCardView cardLoyalty,
@@ -55,24 +57,37 @@ public final class TierStyleUtil {
 
         // Viền card
         if (cardLoyalty != null) {
+            cardLoyalty.setStrokeWidth(dp(c));
             cardLoyalty.setStrokeColor(t.dark);
         }
 
-        // Vương miện (tint)
+        // Vương miện: chỉ tint, KHÔNG ẩn/hiện ở đây
         if (imgCrown != null) {
-            imgCrown.setColorFilter(t.bg, PorterDuff.Mode.SRC_IN);
+            ImageViewCompat.setImageTintList(imgCrown, ColorStateList.valueOf(t.bg));
         }
 
-        // Badge
+        // Badge (wrap & mutate trước khi set tint)
         if (tvTierBadge != null) {
-            tvTierBadge.getBackground().setColorFilter(t.bg, PorterDuff.Mode.SRC_IN);
+            Drawable bg = tvTierBadge.getBackground();
+            if (bg != null) {
+                bg = DrawableCompat.wrap(bg.mutate());
+                DrawableCompat.setTint(bg, t.bg);
+                tvTierBadge.setBackground(bg);
+            }
             tvTierBadge.setText(t.label);
+            tvTierBadge.setTextColor(t.dark);
         }
 
-        // Text "Hạng" ở cột số liệu
+        // Text “Hạng” (nếu layout còn dùng)
         if (tvLoyaltyTier != null) {
             tvLoyaltyTier.setText(t.label);
             tvLoyaltyTier.setTextColor(t.dark);
         }
+    }
+
+    /* ===== Helpers ===== */
+    private static int dp(Context c) {
+        float d = c.getResources().getDisplayMetrics().density;
+        return Math.round(2 * d);
     }
 }

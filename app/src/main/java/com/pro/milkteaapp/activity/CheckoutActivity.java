@@ -2,7 +2,6 @@ package com.pro.milkteaapp.activity;
 
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -11,10 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.WriteBatch;
 import com.pro.milkteaapp.fragment.bottomsheet.CheckoutBottomSheet;
 import com.pro.milkteaapp.models.CartItem;
@@ -157,6 +154,7 @@ public class CheckoutActivity extends AppCompatActivity
         order.put("paymentMethod", paymentMethod);
         order.put("shippingLabel", shippingLabel);
         order.put("voucherCode", TextUtils.isEmpty(voucherCode) ? null : voucherCode);
+        // tạo đơn ở trạng thái pending; chưa cộng điểm
         order.put("status", "pending");
         order.put("createdAt", Timestamp.now());
 
@@ -177,9 +175,10 @@ public class CheckoutActivity extends AppCompatActivity
             java.util.List<Map<String, Object>> tops = new ArrayList<>();
             for (SelectedTopping st : item.getToppings()) {
                 Map<String, Object> m = new HashMap<>();
-                m.put("id", st.id);
-                m.put("name", st.name);
-                m.put("price", st.price);
+                // dùng getter để tránh truy cập field private
+                m.put("id", st.getId());
+                m.put("name", st.getName());
+                m.put("price", st.getPrice());
                 tops.add(m);
             }
             row.put("toppings", tops);
@@ -195,13 +194,7 @@ public class CheckoutActivity extends AppCompatActivity
 
         batch.commit()
                 .addOnSuccessListener(v -> {
-                    // 1) cộng điểm thăng hạng (không trừ)
-                    addLoyaltyPointsForTier(uid, total);
-                    // 2) cộng điểm đổi quà (có thể trừ khi redeem)
-                    addRewardPoints(uid, total);
-                    // 3) cộng tổng chi tiêu
-                    updateTotalSpent(uid, total);
-                    // 4) ghi voucher
+                    // Không cộng điểm ở đây — điểm chỉ cộng khi Admin xác nhận FINISHED
                     recordVoucherUsageIfNeeded(uid, voucherCode,
                             () -> {
                                 Toast.makeText(this, "Đặt hàng thành công!", Toast.LENGTH_SHORT).show();
@@ -215,77 +208,7 @@ public class CheckoutActivity extends AppCompatActivity
                 .addOnFailureListener(e -> Toast.makeText(this, "Lỗi đặt hàng: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
-    // Điểm để lên hạng (loyaltyPoints) – KHÔNG trừ
-    private void addLoyaltyPointsForTier(String userId, long totalAmount) {
-        if (userId == null || userId.isEmpty() || totalAmount == 0) {
-            Log.e("LoyaltyUpdate", "Không đủ thông tin để cộng điểm.");
-            return;
-        }
-
-        final long pointsToAdd = totalAmount / 10_000L; // 10k = 1 điểm
-        if (pointsToAdd == 0) {
-            Log.d("LoyaltyUpdate", "Đơn hàng không đủ giá trị để cộng điểm thăng hạng.");
-            return;
-        }
-
-        final FirebaseFirestore db = FirebaseFirestore.getInstance();
-        final com.google.firebase.firestore.DocumentReference userRef = db.collection("users").document(userId);
-
-        db.runTransaction(transaction -> {
-                    DocumentSnapshot userDoc = transaction.get(userRef);
-                    if (!userDoc.exists()) {
-                        throw new FirebaseFirestoreException("User không tồn tại.",
-                                FirebaseFirestoreException.Code.NOT_FOUND);
-                    }
-
-                    long currentPoints = userDoc.contains("loyaltyPoints")
-                            ? userDoc.getLong("loyaltyPoints") : 0L;
-
-                    long newTotalPoints = currentPoints + pointsToAdd;
-
-                    // Áp dụng sơ đồ hạng mới
-                    String newTier;
-                    if (newTotalPoints >= 1000) {
-                        newTier = "Vàng";
-                    } else if (newTotalPoints >= 400) {
-                        newTier = "Bạc";
-                    } else if (newTotalPoints >= 100) {
-                        newTier = "Đồng";
-                    } else {
-                        newTier = "Chưa xếp hạng";
-                    }
-
-                    transaction.update(userRef,
-                            "loyaltyPoints", newTotalPoints,
-                            "loyaltyTier", newTier
-                    );
-                    return null;
-                })
-                .addOnSuccessListener(aVoid -> Log.d("LoyaltyUpdate", "Đã cộng " + pointsToAdd + " điểm hạng cho " + userId))
-                .addOnFailureListener(e -> Log.e("LoyaltyUpdate", "Cộng điểm hạng thất bại: ", e));
-    }
-
-    // Điểm để ĐỔI QUÀ (rewardPoints) – có thể trừ khi đổi quà
-    private void addRewardPoints(String userId, long totalAmount) {
-        if (userId == null || userId.isEmpty() || totalAmount <= 0) return;
-
-        long rewardToAdd = totalAmount / 20_000L; // 20k = 1 điểm đổi quà
-        if (rewardToAdd == 0) return;
-
-        db.collection("users").document(userId)
-                .update("rewardPoints", FieldValue.increment(rewardToAdd))
-                .addOnSuccessListener(aVoid -> Log.d("Loyalty", "Cộng điểm đổi quà OK"))
-                .addOnFailureListener(e -> Log.e("Loyalty", "Cộng điểm đổi quà lỗi", e));
-    }
-
-    // Tổng chi tiêu
-    private void updateTotalSpent(String userId, long paidAmount) {
-        if (userId == null || paidAmount <= 0) return;
-        db.collection("users").document(userId)
-                .update("totalSpent", FieldValue.increment(paidAmount))
-                .addOnSuccessListener(aVoid -> Log.d("Loyalty", "Cập nhật tổng chi tiêu OK"))
-                .addOnFailureListener(e -> Log.e("Loyalty", "Cập nhật tổng chi tiêu lỗi", e));
-    }
+    // ====== Giữ lại: phương thức hỗ trợ (không gọi tại thời điểm tạo đơn) ======
 
     private void recordVoucherUsageIfNeeded(@NonNull String uid,
                                             @Nullable String voucherCode,

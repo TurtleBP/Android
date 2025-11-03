@@ -37,7 +37,7 @@ public final class LoyaltyPolicy {
     /* ===== % giảm theo hạng (áp dụng trên subtotal) ===== */
     public static double discountPercent(String tier) {
         return switch (normalizeTier(tier)) {
-            case "Vàng" -> 0.20; // 20%
+            case "Vàng" -> 0.15; // 15%
             case "Bạc" -> 0.10; // 10%
             case "Đồng" -> 0.05; // 5%
             default -> 0.0;  // Chưa xếp hạng
