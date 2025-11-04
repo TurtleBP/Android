@@ -39,5 +39,8 @@ public class CheckoutInfo {
     public double getSubtotal() { return subtotal; }
     public double getDiscount() { return discount; }
     public double getShippingFee() { return shippingFee; }
-    public double getGrandTotal() { return grandTotal; }
+
+    public double getGrandTotal() {
+        return 0;
+    }
 }

@@ -41,6 +41,23 @@
 
     <string name="unknown_item">Không rõ</string>
 
+    <!--Payment-->
+    <string name="payment_method_cod">COD (Thanh toán khi nhận)</string>
+    <string name="payment_method_vnpay">VNPAY</string>
+    <string name="payment_method_zalopay">ZaloPay</string>
+    <string name="payment_method_bank">Chuyển khoản Ngân hàng</string>
+    <string name="bank_transfer_details">Thông tin chuyển khoản</string>
+    <string name="bank_name_label">Ngân hàng</string>
+    <string name="bank_name_value">Ngân hàng PayPal</string>
+    <string name="account_number_label">Số tài khoản</string>
+    <string name="account_number_value">868686868686</string>
+    <string name="account_holder_label">Chủ tài khoản</string>
+    <string name="account_holder_value">NGUYEN VAN A</string>
+    <string name="amount_label">Số tiền</string>
+    <string name="content_label">Nội dung chuyển khoản</string>
+    <string name="content_value">[Mã đơn hàng của bạn]</string>
+    <string name="payment_completed_button">Xác nhận chuyển khoản</string>
+
     <!-- Filters -->
     <string name="admin_title_orders">Đơn hàng</string>
     <string name="admin_title_users">Người dùng</string>

@@ -4,7 +4,7 @@
     <color name="colorPrimaryDark">#5D4037</color>
     <color name="colorAccent">#CACACA</color>
     <color name="gold">#FFD700</color>
-
+    <color name="red_dark">#D32F2F</color>
     <color name="textColorPrimary">#5D4037</color>
     <color name="textColorSecondary">#555555</color>
     <color name="textColorAccent">#CACACA</color>
@@ -81,4 +81,5 @@
     <color name="divider_color">#E0E0E0</color>
     <color name="error_color">#B00020</color>
     <color name="success_color">#00C853</color>
+    <color name="dark_gray" />
 </resources>

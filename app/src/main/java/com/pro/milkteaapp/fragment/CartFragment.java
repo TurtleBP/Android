@@ -23,9 +23,15 @@ import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.activity.MainActivity;
 import com.pro.milkteaapp.adapter.CartAdapter;
 import com.pro.milkteaapp.databinding.FragmentCartBinding;
+// THÊM CÁC IMPORT NÀY
+import com.pro.milkteaapp.data.OrdersIdGenerator;
+import com.pro.milkteaapp.fragment.bottomsheet.BankTransferSheet;
 import com.pro.milkteaapp.fragment.bottomsheet.CheckoutBottomSheet;
+import com.pro.milkteaapp.fragment.pickersheet.PaymentMethodPickerSheet;
+// ====================
 import com.pro.milkteaapp.models.*;
 import com.pro.milkteaapp.utils.MoneyUtils;
+
 
 import java.util.*;
 
@@ -193,7 +199,7 @@ public class CartFragment extends Fragment
     // ====== callback từ CheckoutBottomSheet ======
     @Override
     public void onCheckoutConfirmed(@NonNull CheckoutInfo info) {
-        Log.d(TAG, "Checkout address = " + info.address);
+        Log.d(TAG, "Checkout confirmed. Payment method: " + info.paymentMethod);
         placeOrder(info);
     }
 
@@ -210,57 +216,55 @@ public class CartFragment extends Fragment
         final Context app = requireContext().getApplicationContext();
         if (binding != null) binding.checkoutButton.setEnabled(false);
 
-        Map<String, Object> payload = buildOrderPayload(user.getUid(), cartItems, info);
+// === LOGIC MỚI: PHÂN TÁCH PTTT ===
 
-        // === DÙNG ID TÙY BIẾN ===
-        com.pro.milkteaapp.data.OrdersIdGenerator gen = new com.pro.milkteaapp.data.OrdersIdGenerator();
-        gen.nextOrderId() // ví dụ: ORD + 5 chữ số
-                .addOnSuccessListener(orderId ->
-                        db.collection("orders").document(orderId).set(payload)
-                                .addOnSuccessListener(aVoid -> {
-                                    // Ghi nhận lượt dùng voucher (nếu có)
-                                    recordVoucherUsageIfNeeded(user.getUid(), info.voucherCode,
-                                            () -> {
+        // 1. Lấy ID đơn hàng TRƯỚC TIÊN
+        new OrdersIdGenerator().nextOrderId()
+                .addOnSuccessListener(orderId -> {
+                    // Đã có orderId (ví dụ: "ORD12345")
 
-                                                updateLoyaltyPoints(user.getUid(), info.grandTotal);
+                    // 2. Kiểm tra PTTT
+                    if (PaymentMethodPickerSheet.METHOD_BANK_TRANSFER.equals(info.paymentMethod)) {
+                        // === XỬ LÝ CHUYỂN KHOẢN ===
 
-                                                cartItems.clear();
-                                                Toast.makeText(app, app.getString(R.string.order_placed_successfully), Toast.LENGTH_SHORT).show();
+                        // 3. Tạo nội dung memo thật
+                        String customerName = user.getDisplayName();
+                        if (customerName == null || customerName.isEmpty()) {
+                            customerName = user.getPhoneNumber(); // Lấy SĐT nếu không có tên
+                        }
+                        if (customerName == null) customerName = "KHACHHANG";
 
-                                                runOnUiSafe(() -> {
-                                                    if (adapter != null) adapter.notifyDataSetChanged();
-                                                    updateTotal();
+                        String safeName = customerName.toUpperCase(Locale.ROOT)
+                                .replaceAll("\\s+", "")
+                                .replaceAll("[^A-Z0-9]", "");
 
-                                                    Intent i = new Intent(requireActivity(), MainActivity.class);
-                                                    i.putExtra(MainActivity.EXTRA_TARGET_FRAGMENT, "activities:pending");
-                                                    startActivity(i);
+                        String finalMemo = safeName + orderId; // Ví dụ: NGUYENVANAORD12345
 
-                                                    if (binding != null) binding.checkoutButton.setEnabled(true);
-                                                });
-                                            },
-                                            e -> {
-                                                // Không chặn đơn nếu lỗi usage
-                                                Toast.makeText(app, "Đơn đã tạo, nhưng cập nhật lượt voucher lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        // 4. Hiển thị trang ngân hàng ảo
+                        BankTransferSheet bankSheet = BankTransferSheet.newInstance(info.getGrandTotal(), finalMemo);
 
-                                                cartItems.clear();
-                                                runOnUiSafe(() -> {
-                                                    if (adapter != null) adapter.notifyDataSetChanged();
-                                                    updateTotal();
-                                                    if (binding != null) binding.checkoutButton.setEnabled(true);
-                                                });
-                                            });
-                                })
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(app, "Lỗi tạo đơn: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                    runOnUiSafe(() -> {
-                                        if (binding != null) binding.checkoutButton.setEnabled(true);
-                                    });
-                                })
-                                .addOnCompleteListener(task -> runOnUiSafe(() -> {
-                                    if (binding != null) binding.checkoutButton.setEnabled(true);
-                                }))
-                )
+                        bankSheet.setListener(() -> {
+                            // 5. Khi người dùng nhấn "Tôi đã hoàn tất thanh toán"
+                            // -> Lưu đơn hàng vào DB
+                            Log.d(TAG, "Bank payment confirmed by user for order: " + orderId);
+                            saveOrderToFirestore(user.getUid(), orderId, info, app);
+                        });
+
+                        // Phải chạy trên UI thread
+                        runOnUiSafe(() -> {
+                            bankSheet.show(getParentFragmentManager(), "BankTransferSheet");
+                            if (binding != null) binding.checkoutButton.setEnabled(true); // Kích hoạt lại nút
+                        });
+
+                    } else {
+                        // === XỬ LÝ COD (HOẶC PTTT KHÁC) ===
+                        // 3. Lưu đơn hàng ngay lập tức
+                        Log.d(TAG, "Saving COD order: " + orderId);
+                        saveOrderToFirestore(user.getUid(), orderId, info, app);
+                    }
+                })
                 .addOnFailureListener(e -> {
+                    // Lỗi khi tạo OrderID
                     Toast.makeText(app, "Lỗi sinh mã đơn: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     runOnUiSafe(() -> {
                         if (binding != null) binding.checkoutButton.setEnabled(true);
@@ -268,13 +272,60 @@ public class CartFragment extends Fragment
                 });
     }
 
+    /**
+     * Hàm trợ giúp mới: Lưu đơn hàng vào Firestore
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    private void saveOrderToFirestore(String userId, String orderId, CheckoutInfo info, Context app) {
+
+        runOnUiSafe(() -> {
+            if (binding != null) binding.checkoutButton.setEnabled(false);
+        });
+
+        // 1. Build payload
+        Map<String, Object> payload = buildOrderPayload(userId, cartItems, info);
+
+        // 2. Set (Ghi đè) lên document
+        db.collection("orders").document(orderId).set(payload)
+                .addOnSuccessListener(aVoid -> {
+                    // 3. Ghi nhận lượt dùng voucher
+                    recordVoucherUsageIfNeeded(userId, info.voucherCode,
+                            () -> {
+                                // 4. Thành công -> Xóa giỏ hàng VÀ HIỂN THỊ TOAST
+                                cartItems.clear();
+                                Toast.makeText(app, app.getString(R.string.order_placed_successfully), Toast.LENGTH_SHORT).show();
+
+                                runOnUiSafe(() -> {
+                                    if (adapter != null) adapter.notifyDataSetChanged();
+                                    updateTotal();
+                                });
+                            },
+                            e -> {
+                                // Lỗi ghi voucher nhưng vẫn thành công
+                                Toast.makeText(app, "Đơn đã tạo, nhưng cập nhật lượt voucher lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                cartItems.clear();
+                                runOnUiSafe(() -> {
+                                    if (adapter != null) adapter.notifyDataSetChanged();
+                                    updateTotal();
+                                });
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(app, "Lỗi tạo đơn: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                })
+                .addOnCompleteListener(task -> runOnUiSafe(() -> {
+                    if (binding != null) binding.checkoutButton.setEnabled(true);
+                }));
+    }
+
+    // Giữ nguyên method để tham khảo (KHÔNG gọi ở bước đặt hàng).
     private void updateLoyaltyPoints(String userId, double totalAmount) {
         if (userId == null || userId.isEmpty() || totalAmount == 0) {
             Log.e("LoyaltyUpdate", "Không đủ thông tin để cộng điểm.");
             return;
         }
 
-        //quy tắc: 10k = 1 điểm (có thể thay đổi)
+        // quy tắc: 10k = 1 điểm
         final long pointsToAdd = (long) Math.floor(totalAmount / 10000);
 
         if (pointsToAdd == 0) {
@@ -317,12 +368,8 @@ public class CartFragment extends Fragment
 
                     return null;
                 })
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("LoyaltyUpdate", "Đã cộng thành công " + pointsToAdd + " điểm cho user " + userId);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("LoyaltyUpdate", "Cộng điểm thất bại: ", e);
-                });
+                .addOnSuccessListener(aVoid -> Log.d("LoyaltyUpdate", "Đã cộng thành công " + pointsToAdd + " điểm cho user " + userId))
+                .addOnFailureListener(e -> Log.e("LoyaltyUpdate", "Cộng điểm thất bại: ", e));
     }
 
     /** Build payload đơn hàng theo CheckoutInfo (đã có giảm giá/ship/tổng) */
@@ -332,7 +379,15 @@ public class CartFragment extends Fragment
 
         Map<String, Object> order = new HashMap<>();
         order.put("userId", userId);
-        order.put("status", "PENDING");
+        // === LOGIC CẬP NHẬT ===
+        String pm = info.paymentMethod;
+        // Kiểm tra xem phương thức thanh toán có phải COD không
+        boolean isPaid = !PaymentMethodPickerSheet.METHOD_COD.equals(pm);
+
+        order.put("status", "PENDING"); // Tất cả đơn hàng đều bắt đầu là PENDING
+        order.put("isPaid", isPaid);    // Ghi lại trạng thái đã thanh toán
+        order.put("paymentMethod", pm); // Ghi lại phương thức thanh toán
+        // ======================
         order.put("items", itemMaps);
 
         order.put("subtotal", info.subtotal);
@@ -360,7 +415,7 @@ public class CartFragment extends Fragment
         }
         order.put("addressObj", addressObj);
 
-        order.put("paymentMethod", info.paymentMethod);
+//        order.put("paymentMethod", info.paymentMethod);
         order.put("voucherCode", info.voucherCode);
         order.put("shippingLabel", info.shippingLabel);
 

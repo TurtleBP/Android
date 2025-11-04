@@ -1,21 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:orientation="vertical" android:padding="16dp">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="16dp"
+    android:paddingBottom="16dp">
 
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="Chọn phương thức thanh toán" android:textStyle="bold" android:textSize="16sp"
-        android:paddingBottom="8dp"/>
+    <!-- Tiêu đề -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="12dp"
+        android:text="Chọn phương thức thanh toán"
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnCOD" android:layout_width="match_parent" android:layout_height="48dp"
-        android:text="COD (Thanh toán khi nhận)" android:textAllCaps="false"/>
+    <!-- Lựa chọn 1: COD -->
+    <LinearLayout
+        android:id="@+id/btnCOD"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="14dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnVNPAY" android:layout_width="match_parent" android:layout_height="48dp"
-        android:text="VNPAY" android:textAllCaps="false" android:layout_marginTop="8dp"/>
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_payment" /> <!-- Đã xóa app:tint -->
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnMomo" android:layout_width="match_parent" android:layout_height="48dp"
-        android:text="Momo" android:textAllCaps="false" android:layout_marginTop="8dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="@string/payment_method_cod"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Lựa chọn 2: Chuyển khoản -->
+    <LinearLayout
+        android:id="@+id/btnBankTransfer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="14dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_credit" /> <!-- Đã xóa app:tint (Dòng 40) -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="@string/payment_method_bank"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Lựa chọn 3: VNPAY -->
+    <LinearLayout
+        android:id="@+id/btnVNPAY"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="14dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/vnpay" /> <!-- Đã xóa app:tint -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="@string/payment_method_vnpay"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+
+    <!-- Lựa chọn 4: ZaloPay (Vẫn giữ nguyên) -->
+    <LinearLayout
+        android:id="@+id/btnZaloPay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="14dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_zalopay" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="@string/payment_method_zalopay"
+            android:textSize="16sp" />
+    </LinearLayout>
+
 </LinearLayout>
+

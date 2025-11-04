@@ -78,12 +78,15 @@ public class OrdersAdapter extends RecyclerView.Adapter<OrdersAdapter.VH> {
         // Địa chỉ ngắn
         h.tvAddress.setText(o.getAddressDisplay());
 
+        // === CẬP NHẬT LOGIC HIỂN THỊ CHIP ===
         // Chip trạng thái
-        String st = o.getStatus() == null ? "" : o.getStatus();
-        h.chipStatus.setText(mapStatusText(st));
-        // Màu nền chip: dùng android holo* cho chắc có
-        h.chipStatus.setChipBackgroundColorResource(mapStatusColor(st));
+        // String st = o.getStatus() == null ? "" : o.getStatus(); // Dòng này không cần nữa
+
+        // Truyền toàn bộ đối tượng 'o' để kiểm tra cả status và isPaid
+        h.chipStatus.setText(mapStatusText(o));
+        h.chipStatus.setChipBackgroundColorResource(mapStatusColor(o));
         h.chipStatus.setTextColor(h.itemView.getResources().getColor(android.R.color.white));
+        // ===================================
 
         h.card.setOnClickListener(v -> { if (listener != null) listener.onOrderClick(o); });
     }
@@ -107,23 +110,41 @@ public class OrdersAdapter extends RecyclerView.Adapter<OrdersAdapter.VH> {
         }
     }
 
-    private static String mapStatusText(String s) {
-        return switch (s) {
-            case Order.STATUS_PENDING -> "Chờ xác nhận";
-            case Order.STATUS_FINISHED -> "Hoàn tất";
-            case Order.STATUS_CANCELLED -> "Đã hủy";
-            default -> s.isEmpty() ? "Không rõ" : s;
-        };
+    // === CẬP NHẬT: Nhận Order 'o' thay vì String 's' ===
+    private static String mapStatusText(Order o) {
+        String s = (o.getStatus() == null) ? "" : o.getStatus();
+        boolean isPaid = o.isPaid();
+
+        switch (s) {
+            case Order.STATUS_PENDING:
+                // Nếu đang chờ, kiểm tra xem đã trả tiền chưa (Chuyển khoản)
+                // hay là chờ thanh toán (COD)
+                return isPaid ? "Đã thanh toán" : "Chờ thanh toán";
+            case Order.STATUS_FINISHED:
+                return "Hoàn tất";
+            case Order.STATUS_CANCELLED:
+                return "Đã hủy";
+            default:
+                return s.isEmpty() ? "Không rõ" : s;
+        }
     }
 
-    private static int mapStatusColor(String s) {
-        // Tránh phụ thuộc Material Dynamic (không phải máy nào cũng có)
-        return switch (s) {
-            case Order.STATUS_FINISHED ->
-                    android.R.color.holo_green_dark;  // ✅ thay material_dynamic_green60
-            case Order.STATUS_CANCELLED ->
-                    android.R.color.holo_red_dark;    // ✅ thay material_dynamic_red60
-            default -> android.R.color.darker_gray;
-        };
+    // === CẬP NHẬT: Nhận Order 'o' thay vì String 's' ===
+    private static int mapStatusColor(Order o) {
+        String s = (o.getStatus() == null) ? "" : o.getStatus();
+        boolean isPaid = o.isPaid();
+
+        switch (s) {
+            case Order.STATUS_PENDING:
+                // Nếu đã thanh toán (chuyển khoản), hiện màu xanh.
+                // Nếu chưa thanh toán (COD), hiện màu xám.
+                return isPaid ? android.R.color.holo_blue_dark : android.R.color.darker_gray;
+            case Order.STATUS_FINISHED:
+                return android.R.color.holo_green_dark;
+            case Order.STATUS_CANCELLED:
+                return android.R.color.holo_red_dark;
+            default:
+                return android.R.color.darker_gray;
+        }
     }
 }

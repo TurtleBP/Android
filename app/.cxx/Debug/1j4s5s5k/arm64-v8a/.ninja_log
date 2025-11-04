@@ -1,0 +1,11 @@
+# ninja log v5
+1	86	7839558006423802	CMakeFiles/milkteaapp.dir/milkteaapp.cpp.o	cf1cfbc921b84fe1
+88	301	7839558008442964	E:/BT/Android/app/build/intermediates/cxx/Debug/1j4s5s5k/obj/arm64-v8a/libmilkteaapp.so	b64aecb066d5c798
+0	18	0	clean	2fbcb0ab13b85222
+0	18	0	clean	2fbcb0ab13b85222
+0	14	0	clean	2fbcb0ab13b85222
+0	329	7839572221124565	CMakeFiles/milkteaapp.dir/milkteaapp.cpp.o	cf1cfbc921b84fe1
+330	517	7839572222987469	E:/BT/Android/app/build/intermediates/cxx/Debug/1j4s5s5k/obj/arm64-v8a/libmilkteaapp.so	b64aecb066d5c798
+0	37	0	clean	2fbcb0ab13b85222
+0	13	0	clean	2fbcb0ab13b85222
+0	13	0	clean	2fbcb0ab13b85222

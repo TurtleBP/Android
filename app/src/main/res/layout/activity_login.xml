@@ -19,7 +19,7 @@
             android:layout_height="192dp"
             android:scaleType="fitCenter"
             android:contentDescription="TODO"
-            android:src="@mipmap/ic_launcher_round"
+            android:src="@mipmap/logo_app"
             android:layout_marginBottom="32dp" />
 
         <TextView
