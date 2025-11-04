@@ -49,13 +49,12 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.viewpager2:viewpager2:1.1.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
-
     // Navigation
     implementation("androidx.navigation:navigation-fragment:2.9.5")
     implementation("androidx.navigation:navigation-ui:2.9.5")
 
     // ---- Firebase (quản lý phiên bản qua BoM) ----
-    implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     // optional nếu dùng analytics:
@@ -68,7 +67,7 @@ dependencies {
     annotationProcessor("com.github.bumptech.glide:compiler:5.0.5")
 
     // Lottie
-    implementation("com.airbnb.android:lottie:6.6.9")
+    implementation("com.airbnb.android:lottie:6.7.1")
 
     // CircleImageView
     implementation("de.hdodenhof:circleimageview:3.1.0")
@@ -81,7 +80,6 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
 
-    implementation("com.airbnb.android:lottie:6.6.10")
 }
 
 java {

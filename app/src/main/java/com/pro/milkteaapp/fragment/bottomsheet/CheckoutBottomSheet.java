@@ -24,6 +24,7 @@ import com.pro.milkteaapp.models.CartItem;
 import com.pro.milkteaapp.models.CheckoutInfo;
 import com.pro.milkteaapp.models.User;
 import com.pro.milkteaapp.models.Voucher;
+import com.pro.milkteaapp.utils.LoyaltyPolicy;
 import com.pro.milkteaapp.utils.MoneyUtils;
 import com.pro.milkteaapp.utils.VoucherUtils;
 
@@ -55,12 +56,12 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
     // State
     private Address selectedAddress;
     private String paymentMethod = "COD";
-    private Voucher selectedVoucher = null;
+    @Nullable private Voucher selectedVoucher = null;
     private String voucherCode = "";
     private String shippingLabel = "Tiêu chuẩn (15.000đ)";
     private long shippingFee = 15_000L;
 
-    private User currentUser;
+    @Nullable private User currentUser;
 
     public void setOnCheckoutConfirmListener(OnCheckoutConfirmListener l) {
         this.listener = l;
@@ -73,7 +74,6 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         return b.getRoot();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onViewCreated(@NonNull View v, @Nullable Bundle s) {
         super.onViewCreated(v, s);
@@ -163,14 +163,15 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         });
     }
 
-    private void setText(TextView tv, String txt) {
+    private void setText(@Nullable TextView tv, @NonNull String txt) {
         if (tv != null) tv.setText(txt);
     }
 
     private long calcSubtotal() {
         long subtotal = 0L;
         for (CartItem it : items) {
-            subtotal += (long) (it.getUnitPrice() * it.getQuantity());
+            // getUnitPrice() có thể là long/int; ép về long để tránh tràn
+            subtotal += it.getUnitPrice() * it.getQuantity();
         }
         return subtotal;
     }
@@ -180,7 +181,7 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
                 ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
 
         if (uid == null) {
-            updateSummaryUI(); // Không có user, cứ hiển thị giá
+            updateSummaryUI();
             return;
         }
 
@@ -189,52 +190,41 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
                     if (doc.exists()) {
                         currentUser = doc.toObject(User.class);
                     }
-                    updateSummaryUI(); // Cập nhật UI sau khi có (hoặc không có) user
+                    updateSummaryUI();
                 })
-                .addOnFailureListener(e -> {
-                    updateSummaryUI(); // Lỗi cũng phải cập nhật UI
-                });
+                .addOnFailureListener(e -> updateSummaryUI());
     }
 
     private void updateSummaryUI() {
         long subtotal = calcSubtotal();
 
+        // Voucher
         long orderDisc = 0L, shipDisc = 0L;
         if (selectedVoucher != null) {
             VoucherUtils.DiscountResult r = VoucherUtils.calc(selectedVoucher, subtotal, shippingFee);
             orderDisc = r.orderDiscount;
             shipDisc = r.shippingDiscount;
         }
+        long voucherDiscount = orderDisc + shipDisc;
 
-        long voucherDiscount = orderDisc + shipDisc; // Tổng giảm giá từ voucher
-
-        long loyaltyDiscount = 0L;
+        // Giảm giá thành viên theo LoyaltyPolicy (Đồng 5%, Bạc 10%, Vàng 20%, Unrank 0%)
         double loyaltyPercent = 0.0;
-
-        if (currentUser != null && currentUser.getLoyaltyTier() != null) {
-            switch (currentUser.getLoyaltyTier()) {
-                case "Vàng":
-                    loyaltyPercent = 0.10; // Giảm 10%
-                    break;
-                case "Bạc":
-                    loyaltyPercent = 0.05; // Giảm 5%
-                    break;
-                // case "Đồng": (không giảm)
+        if (currentUser != null) {
+            String t = currentUser.getLoyaltyTier();
+            if (t == null || t.isEmpty()) {
+                long pts = currentUser.getLoyaltyPoints();
+                t = LoyaltyPolicy.tierForPoints(pts);
             }
+            loyaltyPercent = LoyaltyPolicy.discountPercent(t);
         }
-        // Giảm giá thành viên tính trên TỔNG TIỀN HÀNG (subtotal)
-        loyaltyDiscount = (long) (subtotal * loyaltyPercent);
-
-        // long discount = orderDisc + shipDisc;
-        //long total = Math.max(0L, subtotal - discount + shippingFee);
+        long loyaltyDiscount = (long) (subtotal * loyaltyPercent);
 
         long totalDiscount = voucherDiscount + loyaltyDiscount;
         long total = Math.max(0L, subtotal - totalDiscount + shippingFee);
 
         b.tvSubtotal.setText(MoneyUtils.formatVnd(subtotal));
-        // b.tvDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(discount)));
-        b.tvDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(voucherDiscount))); // Giảm giá voucher
-        b.tvLoyaltyDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(loyaltyDiscount))); // Giảm giá thành viên
+        b.tvDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(voucherDiscount)));
+        b.tvLoyaltyDiscount.setText(String.format(Locale.getDefault(), "- %s", MoneyUtils.formatVnd(loyaltyDiscount)));
         b.tvShipping.setText(MoneyUtils.formatVnd(shippingFee));
         b.tvFinal.setText(MoneyUtils.formatVnd(total));
 
@@ -255,19 +245,19 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         }
         long voucherDiscount = orderDisc + shipDisc;
 
-        // Tính giảm giá thành viên
-        long loyaltyDiscount = 0L;
-        if (currentUser != null && currentUser.getLoyaltyTier() != null) {
-            double loyaltyPercent = 0.0;
-            switch (currentUser.getLoyaltyTier()) {
-                case "Vàng": loyaltyPercent = 0.10; break;
-                case "Bạc": loyaltyPercent = 0.05; break;
+        // Loyalty theo LoyaltyPolicy
+        double loyaltyPercent = 0.0;
+        if (currentUser != null) {
+            String t = currentUser.getLoyaltyTier();
+            if (t == null || t.isEmpty()) {
+                long pts = currentUser.getLoyaltyPoints();
+                t = LoyaltyPolicy.tierForPoints(pts);
             }
-            loyaltyDiscount = (long) (subtotal * loyaltyPercent);
+            loyaltyPercent = LoyaltyPolicy.discountPercent(t);
         }
+        long loyaltyDiscount = (long) (subtotal * loyaltyPercent);
 
-        // Tổng
-        long totalDiscount = voucherDiscount + loyaltyDiscount; // TỔNG GIẢM GIÁ
+        long totalDiscount = voucherDiscount + loyaltyDiscount;
         long total = Math.max(0L, subtotal - totalDiscount + shippingFee);
 
         String addressString = selectedAddress != null ? selectedAddress.displayLine() : "";

@@ -31,7 +31,7 @@ public class AdminStatisticsFragment extends Fragment
     private SwipeRefreshLayout swipe;
     private RecyclerView recyclerView;
     private View loading, empty;
-    private Spinner spinnerTime, spinnerUser;
+    private Spinner spinnerUser;
 
     private AdminStatisticAdapter adapter;
     private final List<String> data = new ArrayList<>();
@@ -58,7 +58,7 @@ public class AdminStatisticsFragment extends Fragment
         recyclerView = v.findViewById(R.id.recycler);
         loading = v.findViewById(R.id.loadingState);
         empty = v.findViewById(R.id.emptyState);
-        spinnerTime = v.findViewById(R.id.spinnerTime);
+        Spinner spinnerTime = v.findViewById(R.id.spinnerTime);
         spinnerUser = v.findViewById(R.id.spinnerUser);
 
         // KPI binding
@@ -223,12 +223,12 @@ public class AdminStatisticsFragment extends Fragment
     }
 
     private String getTimeLabel(int type) {
-        switch (type) {
-            case 0: return "Hôm nay";
-            case 1: return "Tuần này";
-            case 2: return "Tháng này";
-            default: return "Tất cả thời gian";
-        }
+        return switch (type) {
+            case 0 -> "Hôm nay";
+            case 1 -> "Tuần này";
+            case 2 -> "Tháng này";
+            default -> "Tất cả thời gian";
+        };
     }
 
     private void showLoading(boolean show) {
@@ -237,5 +237,8 @@ public class AdminStatisticsFragment extends Fragment
 
     private void toggleEmpty(boolean isEmpty) {
         empty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+    }
+    public void onResume() {
+        super.onResume();
     }
 }

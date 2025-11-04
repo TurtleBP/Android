@@ -222,7 +222,8 @@ public class CartFragment extends Fragment
                                     recordVoucherUsageIfNeeded(user.getUid(), info.voucherCode,
                                             () -> {
 
-                                                updateLoyaltyPoints(user.getUid(), info.grandTotal);
+                                                // *** BỎ GỌI CỘNG ĐIỂM Ở ĐÂY ***
+                                                // updateLoyaltyPoints(user.getUid(), info.grandTotal);
 
                                                 cartItems.clear();
                                                 Toast.makeText(app, app.getString(R.string.order_placed_successfully), Toast.LENGTH_SHORT).show();
@@ -268,13 +269,14 @@ public class CartFragment extends Fragment
                 });
     }
 
+    // Giữ nguyên method để tham khảo (KHÔNG gọi ở bước đặt hàng).
     private void updateLoyaltyPoints(String userId, double totalAmount) {
         if (userId == null || userId.isEmpty() || totalAmount == 0) {
             Log.e("LoyaltyUpdate", "Không đủ thông tin để cộng điểm.");
             return;
         }
 
-        //quy tắc: 10k = 1 điểm (có thể thay đổi)
+        // quy tắc: 10k = 1 điểm
         final long pointsToAdd = (long) Math.floor(totalAmount / 10000);
 
         if (pointsToAdd == 0) {
@@ -317,12 +319,8 @@ public class CartFragment extends Fragment
 
                     return null;
                 })
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("LoyaltyUpdate", "Đã cộng thành công " + pointsToAdd + " điểm cho user " + userId);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("LoyaltyUpdate", "Cộng điểm thất bại: ", e);
-                });
+                .addOnSuccessListener(aVoid -> Log.d("LoyaltyUpdate", "Đã cộng thành công " + pointsToAdd + " điểm cho user " + userId))
+                .addOnFailureListener(e -> Log.e("LoyaltyUpdate", "Cộng điểm thất bại: ", e));
     }
 
     /** Build payload đơn hàng theo CheckoutInfo (đã có giảm giá/ship/tổng) */

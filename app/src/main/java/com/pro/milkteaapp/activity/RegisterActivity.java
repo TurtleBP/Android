@@ -104,7 +104,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         setLoading(true);
 
-        // 1. tạo tài khoản Firebase Auth (để login)
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener(result -> {
                     if (result == null || result.getUser() == null) {
@@ -113,18 +112,16 @@ public class RegisterActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // gửi mail verify (không bắt buộc)
+                    // Gửi mail xác thực (không bắt buộc)
                     result.getUser().sendEmailVerification()
                             .addOnFailureListener(e ->
                                     Log.w("Auth", "Send verification email failed: " + e.getMessage()));
 
-                    // 2. sinh mã user dạng USR00001
+                    // Sinh mã USRxxxxx rồi lưu Firestore
                     UserIDGenerator gen = new UserIDGenerator();
                     gen.nextUserId()
-                            .addOnSuccessListener(newId -> {
-                                // 3. lưu Firestore với documentId = newId
-                                saveUserToFirestore(newId, fullName, email, phone, address);
-                            })
+                            .addOnSuccessListener(newId ->
+                                    saveUserToFirestore(newId, fullName, email, phone, address))
                             .addOnFailureListener(e -> {
                                 setLoading(false);
                                 Toast.makeText(this, "Không tạo được mã người dùng: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -198,7 +195,7 @@ public class RegisterActivity extends AppCompatActivity {
                                      String phone,
                                      String address) {
         User user = new User();
-        user.setUid(userId); // ✅ uid = document id
+        user.setUid(userId);
         user.setFullName(fullName);
         user.setEmail(email);
         user.setPhone(phone == null ? "" : phone);
@@ -206,11 +203,14 @@ public class RegisterActivity extends AppCompatActivity {
         user.setRole("user");
         user.setAvatar("");
 
-        // ✅ Thêm loyalty mặc định
-        user.setLoyaltyTier("Đồng");  // Hạng mặc định
-        user.setLoyaltyPoints(0);     // Điểm mặc định
+        // Loyalty mặc định theo hệ thống mới
+        user.setLoyaltyTier("Chưa xếp hạng"); // 0–99
+        user.setLoyaltyPoints(0);
 
-        // ✅ Lưu vào Firestore đúng docId
+        // Điểm đổi quà & tổng chi tiêu (phục vụ Redeem/Thống kê)
+        user.setRewardPoints(0);
+        user.setTotalSpent(0);
+
         db.collection("users").document(userId)
                 .set(user)
                 .addOnSuccessListener(unused -> handleRegistrationSuccess(userId))
@@ -223,8 +223,7 @@ public class RegisterActivity extends AppCompatActivity {
     private void handleRegistrationSuccess(String userId) {
         try {
             new SessionManager(this).setUid(userId);
-        } catch (Throwable ignored) {
-        }
+        } catch (Throwable ignored) {}
 
         safeSignOutAndClear();
         setLoading(false);
@@ -252,13 +251,8 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void safeSignOutAndClear() {
-        try {
-            FirebaseAuth.getInstance().signOut();
-        } catch (Exception ignore) {
-        }
-        try {
-            new SessionManager(this).clear();
-        } catch (Throwable t) {
+        try { FirebaseAuth.getInstance().signOut(); } catch (Exception ignore) {}
+        try { new SessionManager(this).clear(); } catch (Throwable t) {
             Log.w("Session", "clear failed: " + t.getMessage());
         }
     }

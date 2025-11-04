@@ -2,7 +2,6 @@ package com.pro.milkteaapp.fragment.admin;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,13 +14,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.tabs.TabLayout;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -31,9 +26,8 @@ import com.pro.milkteaapp.adapter.admin.AdminOrdersAdapter;
 import com.pro.milkteaapp.models.Order;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class AdminOrdersFragment extends Fragment {
 
@@ -82,13 +76,6 @@ public class AdminOrdersFragment extends Fragment {
                 int pos = tab.getPosition();
                 currentStatus = (pos == 0) ? "PENDING" : (pos == 1) ? "FINISHED" : "CANCELLED";
 
-                boolean isPending   = "PENDING".equalsIgnoreCase(currentStatus);
-                boolean isCancelled = "CANCELLED".equalsIgnoreCase(currentStatus);
-
-                adapter.setShowConfirm(isPending);
-                adapter.setShowCancel(isPending);
-                adapter.setShowDelete(isCancelled);
-
                 recyclerView.setVisibility(View.INVISIBLE);
                 adapter.submitList(new ArrayList<>());
 
@@ -105,10 +92,15 @@ public class AdminOrdersFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new AdminOrdersAdapter(
                 this::onItemClicked,
-                this::onConfirmClicked,
-                this::onCancelClicked,
-                this::onDeleteClicked
+                null, // Không dùng xác nhận
+                null, // Không dùng huỷ
+                this::onDeleteClicked // Giữ lại chức năng xoá
         );
+
+        // Tắt toàn bộ nút confirm & cancel
+        adapter.setShowConfirm(false);
+        adapter.setShowCancel(false);
+
         recyclerView.setItemAnimator(null);
         adapter.setStateRestorationPolicy(
                 RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -128,9 +120,23 @@ public class AdminOrdersFragment extends Fragment {
         if (!isAdded()) return;
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        Query q = db.collection("orders")
-                .whereEqualTo("status", currentStatus)
-                .orderBy("createdAt", Query.Direction.DESCENDING);
+        Query q;
+
+        // Query server theo field “ổn định” để có index đơn giản, rồi sort lại trên client.
+        if ("PENDING".equalsIgnoreCase(currentStatus)) {
+            q = db.collection("orders")
+                    .whereEqualTo("status", "PENDING")
+                    .orderBy("createdAt", Query.Direction.DESCENDING);
+        } else if ("FINISHED".equalsIgnoreCase(currentStatus)) {
+            // vẫn orderBy createdAt (ít index), client sẽ sort lại theo finishedAt
+            q = db.collection("orders")
+                    .whereEqualTo("status", "FINISHED")
+                    .orderBy("createdAt", Query.Direction.DESCENDING);
+        } else { // CANCELLED tab → lấy cả CANCELLED & CANCELED
+            q = db.collection("orders")
+                    .whereIn("status", java.util.Arrays.asList("CANCELLED", "CANCELED"))
+                    .orderBy("createdAt", Query.Direction.DESCENDING);
+        }
 
         if (registration != null) { registration.remove(); registration = null; }
 
@@ -154,12 +160,27 @@ public class AdminOrdersFragment extends Fragment {
                 }
             }
 
-            boolean isPending   = "PENDING".equalsIgnoreCase(currentStatus);
-            boolean isCancelled = "CANCELLED".equalsIgnoreCase(currentStatus);
+            // ===== Client-side sort theo timestamp “đúng nghĩa” =====
+            if ("CANCELLED".equalsIgnoreCase(currentStatus)) {
+                // Ưu tiên cancelledAt/canceledAt, fallback createdAt
+                Collections.sort(data, (a, b) -> {
+                    Timestamp ta = firstNonNullCancelTs(a);
+                    Timestamp tb = firstNonNullCancelTs(b);
+                    long la = tsToLong(ta != null ? ta : a.getCreatedAt());
+                    long lb = tsToLong(tb != null ? tb : b.getCreatedAt());
+                    return Long.compare(lb, la); // desc
+                });
+            } else if ("FINISHED".equalsIgnoreCase(currentStatus)) {
+                // Ưu tiên finishedAt, fallback createdAt
+                Collections.sort(data, (a, b) -> {
+                    long la = tsToLong(a.getFinishedAt() != null ? a.getFinishedAt() : a.getCreatedAt());
+                    long lb = tsToLong(b.getFinishedAt() != null ? b.getFinishedAt() : b.getCreatedAt());
+                    return Long.compare(lb, la); // desc
+                });
+            } // PENDING: đã orderBy createdAt desc ở server
 
-            adapter.setShowConfirm(isPending);
-            adapter.setShowCancel(isPending);
-            adapter.setShowDelete(isCancelled);
+            // Chỉ hiện nút xóa ở tab Cancelled
+            adapter.setShowDelete("CANCELLED".equalsIgnoreCase(currentStatus));
 
             adapter.submitList(data, () -> {
                 showLoading(false);
@@ -167,76 +188,6 @@ public class AdminOrdersFragment extends Fragment {
                 recyclerView.setVisibility(View.VISIBLE);
             });
         });
-    }
-
-    /** Xác nhận → FINISHED */
-    private void onConfirmClicked(@NonNull Order order) {
-        if (!"PENDING".equalsIgnoreCase(currentStatus)) return;
-
-        FirebaseUser admin = FirebaseAuth.getInstance().getCurrentUser();
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "FINISHED");
-        updates.put("confirmedAt", FieldValue.serverTimestamp());
-        updates.put("finishedAt",  FieldValue.serverTimestamp());
-        updates.put("confirmedBy", admin != null ? admin.getEmail() : null);
-
-        FirebaseFirestore.getInstance().collection("orders")
-                .document(order.getId())
-                .update(updates)
-                .addOnSuccessListener(s -> {
-                    toast("✅ Đã xác nhận đơn #" + order.getId());
-                    writeInbox(order.getUserId(), "order_done",
-                            "Đơn hàng với mã " + order.getId() + " đã hoàn thành",
-                            order.getId(), null);
-                })
-                .addOnFailureListener(e -> toastLong("❌ Lỗi xác nhận: " + e.getMessage()));
-    }
-
-    /** Huỷ → CANCELLED (ghi cả 2 dạng tên field) */
-    private void onCancelClicked(@NonNull Order order) {
-        if (!"PENDING".equalsIgnoreCase(currentStatus)) return;
-
-        final TextInputEditText input = new TextInputEditText(requireContext());
-        input.setHint("Lý do huỷ (tuỳ chọn)");
-
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Huỷ đơn #" + order.getId())
-                .setMessage("Bạn có chắc muốn huỷ đơn này?")
-                .setView(input)
-                .setNegativeButton("Không", (d, w) -> d.dismiss())
-                .setPositiveButton("Huỷ đơn", (d, w) -> {
-                    String reason = input.getText() != null ? input.getText().toString().trim() : null;
-                    FirebaseUser admin = FirebaseAuth.getInstance().getCurrentUser();
-
-                    Map<String, Object> updates = new HashMap<>();
-                    updates.put("status", "CANCELLED");
-
-                    // dạng bạn đang dùng trong fragment
-                    updates.put("cancelledAt", FieldValue.serverTimestamp());
-                    updates.put("cancelledBy", admin != null ? admin.getEmail() : null);
-                    if (!TextUtils.isEmpty(reason)) updates.put("cancelledReason", reason);
-
-                    // dạng màn hình user có thể đang đọc
-                    updates.put("canceledAt", FieldValue.serverTimestamp());
-                    if (!TextUtils.isEmpty(reason)) updates.put("cancelReason", reason);
-
-                    FirebaseFirestore.getInstance().collection("orders")
-                            .document(order.getId())
-                            .update(updates)
-                            .addOnSuccessListener(s -> {
-                                toast("🚫 Đã huỷ đơn #" + order.getId());
-                                writeInbox(
-                                        order.getUserId(),
-                                        "order_cancelled",
-                                        "Đơn hàng với mã " + order.getId() + " đã bị huỷ"
-                                                + (TextUtils.isEmpty(reason) ? "" : (": " + reason)),
-                                        order.getId(),
-                                        reason
-                                );
-                            })
-                            .addOnFailureListener(e -> toastLong("❌ Lỗi huỷ: " + e.getMessage()));
-                })
-                .show();
     }
 
     /** Xoá hẳn record (tab Cancelled) */
@@ -248,21 +199,22 @@ public class AdminOrdersFragment extends Fragment {
                 .addOnFailureListener(e -> toastLong("❌ Lỗi xóa: " + e.getMessage()));
     }
 
-    private void writeInbox(String userId, String type, String message, String orderId, @Nullable String reason) {
-        if (userId == null || userId.isEmpty()) return;
-        Map<String, Object> msg = new HashMap<>();
-        msg.put("type", type);
-        msg.put("orderId", orderId);
-        msg.put("message", message);
-        if (!TextUtils.isEmpty(reason)) msg.put("reason", reason);
-        msg.put("createdAt", FieldValue.serverTimestamp());
-        msg.put("read", false);
+    // ===== Helpers =====
+    private static long tsToLong(@Nullable Timestamp ts) {
+        return ts != null ? ts.toDate().getTime() : 0L;
+    }
 
-        FirebaseFirestore.getInstance()
-                .collection("users").document(userId)
-                .collection("inbox")
-                .add(msg)
-                .addOnFailureListener(e -> toastLong("❗Không thể ghi tin nhắn: " + e.getMessage()));
+    @Nullable
+    private static Timestamp firstNonNullCancelTs(@NonNull Order o) {
+        if (o.getCancelledAt() != null) return o.getCancelledAt(); // British
+        // Nếu model có thêm field khác, có thể bổ sung getter getCanceledAt()
+        try {
+            // phản xạ nhẹ nếu bạn có cả 2 field
+            java.lang.reflect.Method m = o.getClass().getMethod("getCanceledAt");
+            Object v = m.invoke(o);
+            if (v instanceof Timestamp) return (Timestamp) v;
+        } catch (Exception ignore) {}
+        return null;
     }
 
     private void showLoading(boolean s) { loadingState.setVisibility(s ? View.VISIBLE : View.GONE); }

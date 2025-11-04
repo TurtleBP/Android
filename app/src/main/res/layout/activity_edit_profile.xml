@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:background="#F5F5F5">
 
-    <!-- Toolbar luôn cố định trên cùng -->
+    <!-- Toolbar -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -17,7 +17,7 @@
         app:navigationIcon="@drawable/ic_arrow_back"
         app:navigationIconTint="@color/white" />
 
-    <!-- Nội dung có thể cuộn -->
+    <!-- Nội dung cuộn -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -29,26 +29,29 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Avatar + chọn ảnh -->
-            <ImageView
+            <!-- Avatar bo tròn -->
+            <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/imgAvatarPreview"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
                 android:layout_marginTop="20dp"
                 android:layout_gravity="center_horizontal"
-                android:src="@drawable/ic_avatar_default"
-                android:scaleType="centerCrop"
-                android:contentDescription="@string/avatar" />
+                android:src="@mipmap/ic_avatar"
+                android:contentDescription="@string/avatar"
+                app:civ_border_width="2dp"
+                app:civ_border_color="@color/primary" />
 
-            <Button
+            <!-- Chọn ảnh -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPickAvatar"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="wrap_content"
                 android:layout_height="42dp"
                 android:layout_marginTop="10dp"
                 android:layout_gravity="center_horizontal"
                 android:text="@string/select_image"
                 android:textAllCaps="false"
-                style="@style/Widget.MaterialComponents.Button"
+                android:textColor="@color/white"
                 app:backgroundTint="@color/primary" />
 
             <!-- Họ tên -->
@@ -56,7 +59,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:layout_marginBottom="16dp"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -71,7 +73,6 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -86,7 +87,6 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -101,7 +101,6 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -112,6 +111,7 @@
                     android:inputType="textPostalAddress" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Loading -->
             <ProgressBar
                 android:id="@+id/progressBar"
                 android:layout_width="48dp"
@@ -120,18 +120,18 @@
                 android:layout_gravity="center_horizontal"
                 android:visibility="gone" />
 
-            <!-- Button Lưu -->
-            <Button
+            <!-- Lưu -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonSaveProfile"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="match_parent"
                 android:layout_height="55dp"
+                android:layout_marginTop="8dp"
                 android:text="@string/save"
                 android:textAllCaps="false"
                 android:textSize="16sp"
-                app:cornerRadius="12dp"
-                android:elevation="4dp"
-                app:backgroundTint="@color/primary"
-                style="@style/Widget.MaterialComponents.Button"/>
+                android:textColor="@color/white"
+                app:backgroundTint="@color/primary" />
         </LinearLayout>
     </ScrollView>
 

@@ -138,7 +138,7 @@ public class ProductDetailBottomSheet extends BottomSheetDialogFragment {
         } else milkTeaImage.setImageResource(R.drawable.ic_milk_tea);
 
         // Size mặc định Medium
-        sizeRadioGroup.check(R.id.radioMedium);
+        sizeRadioGroup.check(R.id.radioSmall);
         quantityTextView.setText(String.valueOf(quantity));
 
         // Adapter topping

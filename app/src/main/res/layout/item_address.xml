@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
@@ -9,7 +10,6 @@
     android:foreground="?attr/selectableItemBackground"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp"
-    app:strokeWidth="0dp"
     app:cardBackgroundColor="?attr/colorSurface">
 
     <LinearLayout
@@ -24,53 +24,76 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textStyle="bold"
-            android:text="Nguyễn Văn A • 0901234567"
-            style="@style/TextAppearance.MaterialComponents.Subtitle1"
-            android:textColor="?attr/colorOnSurface" />
+            style="@style/TextAppearance.Material3.TitleSmall"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Nguyễn Văn A • 0901234567" />
 
-        <!-- Địa chỉ gộp (màu phụ) -->
+        <!-- Địa chỉ gộp -->
         <TextView
             android:id="@+id/tvAddressLines"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="123 Nguyễn Trãi, P.1, Q.5, TP.HCM"
-            style="@style/TextAppearance.MaterialComponents.Body2"
             android:layout_marginTop="4dp"
-            android:textColor="?android:attr/textColorSecondary" />
+            style="@style/TextAppearance.Material3.BodyMedium"
+            tools:text="123 Nguyễn Trãi, P.1, Q.5, TP.HCM" />
 
+        <!-- Hành động -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="end"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="10dp">
 
+            <!-- Mặc định -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSetDefault"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:text="Mặc định"
                 android:textAllCaps="false"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_marginEnd="6dp"/>
+                android:textSize="13sp"
+                android:textColor="@color/black"
+                app:strokeColor="@color/gold"
+                app:icon="@drawable/ic_star_filled"
+                app:iconTint="@color/gold"
+                app:iconGravity="textStart"
+                app:iconPadding="6dp"
+                android:layout_marginEnd="6dp" />
 
+            <!-- Sửa -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnEdit"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:text="Sửa"
                 android:textAllCaps="false"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_marginEnd="6dp"/>
+                android:textSize="13sp"
+                android:textColor="@color/primary"
+                app:strokeColor="@color/primary"
+                app:icon="@drawable/ic_edit"
+                app:iconTint="@color/primary"
+                app:iconGravity="textStart"
+                app:iconPadding="6dp"
+                android:layout_marginEnd="6dp" />
 
+            <!-- Xóa -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDelete"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:text="Xóa"
                 android:textAllCaps="false"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:textColor="?attr/colorError"/>
+                android:textSize="13sp"
+                android:textColor="@color/red_dark"
+                app:strokeColor="@color/red_dark"
+                app:icon="@drawable/ic_delete"
+                app:iconTint="@color/red_dark"
+                app:iconGravity="textStart"
+                app:iconPadding="6dp" />
         </LinearLayout>
 
     </LinearLayout>
