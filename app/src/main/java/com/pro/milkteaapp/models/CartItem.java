@@ -26,6 +26,12 @@ public class CartItem implements Serializable {
     private int quantity;
     private String size; // Small / Medium / Large (hoặc Nhỏ / Vừa / Lớn)
     private ArrayList<SelectedTopping> toppings; // danh sách topping đã chọn
+
+    private String sugar;
+    private String ice;
+    private String note;
+
+
     private long totalPrice;
 
     public CartItem(@NonNull Products product, int quantity, String size,
@@ -38,11 +44,30 @@ public class CartItem implements Serializable {
         recalcTotal();
     }
 
+    public CartItem(@NonNull Products product, int quantity, String size,
+                    String sugar, String ice, String note,
+                    java.util.List<SelectedTopping> toppings) {
+        this.product  = Objects.requireNonNull(product, "product không được null");
+        this.quantity = Math.max(1, quantity);
+        this.size     = size;
+        this.sugar    = sugar;
+        this.ice      = ice;
+        this.note     = note;
+        this.toppings = new ArrayList<>(toppings != null ? toppings : java.util.Collections.emptyList());
+        normalizeToppingOrder();
+        recalcTotal();
+    }
+
     // ===== Getter/Setter =====
     public Products getMilkTea() { return product; }  // tương thích code cũ
     public Products getProduct() { return product; }
     public int getQuantity() { return quantity; }
     public String getSize()  { return size; }
+
+    public String getSugar() { return sugar; }
+    public String getIce() { return ice; }
+    public String getNote() { return note; }
+
     public long getTotalPrice() { return totalPrice; }
     public java.util.List<SelectedTopping> getToppings() {
         return java.util.Collections.unmodifiableList(toppings);
@@ -125,6 +150,10 @@ public class CartItem implements Serializable {
         m.put("imageUrl", getImageUrl());
         m.put("size", getSize());
 
+        m.put("sugar", getSugar());
+        m.put("ice", getIce());
+        m.put("note", getNote());
+
         java.util.List<Map<String, Object>> tops = new java.util.ArrayList<>();
         for (SelectedTopping st : toppings) tops.add(st.toMap());
         m.put("toppings", tops);
@@ -141,6 +170,9 @@ public class CartItem implements Serializable {
         if (!(o instanceof CartItem that)) return false;
         return Objects.equals(getProductId(), that.getProductId())
                 && Objects.equals(normalize(size), normalize(that.size))
+                && Objects.equals(normalize(sugar), normalize(that.sugar)) // Thêm
+                && Objects.equals(normalize(ice), normalize(that.ice))     // Thêm
+                && Objects.equals(normalize(note), normalize(that.note))
                 && sameToppingIds(that.toppings);
     }
     private boolean sameToppingIds(java.util.List<SelectedTopping> other) {
@@ -155,7 +187,7 @@ public class CartItem implements Serializable {
     }
     @Override
     public int hashCode() {
-        int h = Objects.hash(getProductId(), normalize(size));
+        int h = Objects.hash(getProductId(), normalize(size), normalize(sugar), normalize(ice), normalize(note));
         if (toppings != null) for (SelectedTopping t : toppings) h = 31 * h + (t.id == null ? 0 : t.id.hashCode());
         return h;
     }

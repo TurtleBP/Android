@@ -34,6 +34,17 @@
             android:text="Size L • Topping: Trân châu trắng"
             android:textSize="12sp"
             android:alpha="0.8"/>
+
+        <TextView
+            android:id="@+id/tvNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ghi chú: Ít đá"
+            android:textSize="12sp"
+            android:textStyle="italic"
+            android:textColor="@color/primary"
+            android:visibility="gone"
+            android:layout_marginTop="2dp"/>
     </LinearLayout>
 
     <LinearLayout

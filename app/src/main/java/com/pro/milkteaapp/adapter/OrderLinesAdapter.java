@@ -1,5 +1,6 @@
 package com.pro.milkteaapp.adapter;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,6 +46,14 @@ public class OrderLinesAdapter extends RecyclerView.Adapter<OrderLinesAdapter.VH
             h.tvMeta.setText(meta);
         }
 
+        String note = it.getNote();
+        if (!TextUtils.isEmpty(note)) {
+            h.tvNote.setText("Ghi chú: " + note);
+            h.tvNote.setVisibility(View.VISIBLE);
+        } else {
+            h.tvNote.setVisibility(View.GONE);
+        }
+
         String qtyPrice = MoneyUtils.formatVnd(it.getUnitPrice()) + " × " + it.getQuantity();
         h.tvQtyPrice.setText(qtyPrice);
 
@@ -55,10 +64,13 @@ public class OrderLinesAdapter extends RecyclerView.Adapter<OrderLinesAdapter.VH
 
     static class VH extends RecyclerView.ViewHolder {
         TextView tvName, tvMeta, tvQtyPrice, tvLineTotal;
+        TextView tvNote;
+
         VH(@NonNull View v) {
             super(v);
             tvName = v.findViewById(R.id.tvName);
             tvMeta = v.findViewById(R.id.tvMeta);
+            tvNote = v.findViewById(R.id.tvNote);
             tvQtyPrice = v.findViewById(R.id.tvQtyPrice);
             tvLineTotal = v.findViewById(R.id.tvLineTotal);
         }

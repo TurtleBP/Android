@@ -172,14 +172,21 @@ public class CheckoutActivity extends AppCompatActivity
             row.put("unitPrice", item.getUnitPrice());
             row.put("lineTotal", item.getTotalPrice());
 
+            // giữ thêm dữ liệu chi tiết từ nhánh detail-tea
+            row.put("sugar", item.getSugar());
+            row.put("ice", item.getIce());
+            row.put("note", item.getNote());
+
+            // toppings
             java.util.List<Map<String, Object>> tops = new ArrayList<>();
-            for (SelectedTopping st : item.getToppings()) {
-                Map<String, Object> m = new HashMap<>();
-                // dùng getter để tránh truy cập field private
-                m.put("id", st.getId());
-                m.put("name", st.getName());
-                m.put("price", st.getPrice());
-                tops.add(m);
+            if (item.getToppings() != null) {
+                for (SelectedTopping st : item.getToppings()) {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", st.getId());
+                    m.put("name", st.getName());
+                    m.put("price", st.getPrice());
+                    tops.add(m);
+                }
             }
             row.put("toppings", tops);
 
