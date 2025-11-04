@@ -19,7 +19,7 @@
     <!-- ✨ NEW: System Splash theme cho EntryActivity (không set layout) -->
     <style name="Theme.MilkteaApp.Starting" parent="Theme.SplashScreen">
         <!-- Nền splash -->
-        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenBackground">@color/primary_light</item>
         <!-- Icon hiển thị khi splash (nên để mipmap/ic_launcher hoặc round) -->
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
         <!-- Sau splash, app dùng theme chính -->
@@ -30,6 +30,9 @@
     <style name="Theme.MilkteaApp.NoActionBar" parent="Theme.MilkteaApp">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/primary_dark</item>
     </style>
 
     <style name="Theme.MilkteaApp.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
