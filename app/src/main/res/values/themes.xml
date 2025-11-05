@@ -1,7 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Base application theme (bạn đang dùng MaterialComponents là OK) -->
-    <style name="Theme.MilkteaApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <!-- Base application theme -->
+    <style name="Theme.MilkteaApp" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_dark</item>
         <item name="colorOnPrimary">@color/white</item>
@@ -10,34 +9,34 @@
         <item name="colorOnSecondary">@color/white</item>
 
         <item name="android:windowBackground">@color/background</item>
+
+        <!-- QUAN TRỌNG: Statusbar settings -->
         <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Thêm các dòng này -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
 
         <item name="colorSurface">@color/white</item>
         <item name="colorOnSurface">@color/black</item>
     </style>
 
-    <!-- ✨ NEW: System Splash theme cho EntryActivity (không set layout) -->
+    <!-- Splash theme -->
     <style name="Theme.MilkteaApp.Starting" parent="Theme.SplashScreen">
-        <!-- Nền splash -->
-        <item name="windowSplashScreenBackground">@color/primary_light</item>
-        <!-- Icon hiển thị khi splash (nên để mipmap/ic_launcher hoặc round) -->
+        <item name="windowSplashScreenBackground">@color/transparent</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
-        <!-- Sau splash, app dùng theme chính -->
         <item name="postSplashScreenTheme">@style/Theme.MilkteaApp</item>
     </style>
 
-    <!-- Theme không action bar cho các activity thường -->
+    <!-- NoActionBar theme - ĐƠN GIẢN HÓA -->
     <style name="Theme.MilkteaApp.NoActionBar" parent="Theme.MilkteaApp">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:statusBarColor">@color/primary_dark</item>
     </style>
 
-    <style name="Theme.MilkteaApp.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-    <style name="Theme.MilkteaApp.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
-
+    <!-- Các style khác giữ nguyên -->
     <style name="ButtonStyle" parent="Widget.MaterialComponents.Button">
         <item name="android:layout_margin">8dp</item>
         <item name="android:layout_height">48dp</item>
@@ -45,11 +44,4 @@
         <item name="android:insetBottom">0dp</item>
         <item name="cornerRadius">24dp</item>
     </style>
-
-    <style name="EditTextStyle" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-        <item name="boxStrokeColor">@color/primary</item>
-        <item name="android:textColorHint">@color/primary</item>
-        <item name="hintTextColor">@color/primary</item>
-    </style>
-
 </resources>

@@ -49,7 +49,7 @@ public final class LoyaltyPolicy {
         String t = normalizeTier(tier);
         return switch (t) {
             case "Vàng" -> Arrays.asList(
-                    "Giảm 20% trên tổng tiền hàng",
+                    "Giảm 15% trên tổng tiền hàng",
                     "Ưu tiên hỗ trợ & khuyến mãi",
                     "Mốc đổi quà ưu đãi hơn"
             );

@@ -1,17 +1,22 @@
 <resources>
+    <!-- XÓA HOẶC COMMENT TOÀN BỘ AppTheme VÌ ĐANG BỊ TRÙNG/ XUNG ĐỘT -->
+    <!--
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="android:listDivider">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:statusBarColor">@color/white</item>
     </style>
+    -->
+
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
     <style name="AppTheme.popUpOverlay" parent="ThemeOverlay.AppCompat.Light" />
-    <style name="TextViewStyle" parent="android:Widget.TextView">
 
+    <style name="TextViewStyle" parent="android:Widget.TextView">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">#ffffff</item>
     </style>
+
     <!-- Bo tròn 100% cho ShapeableImageView -->
     <style name="ShapeAppearanceOverlay.App.Circle" parent="">
         <item name="cornerFamily">rounded</item>
@@ -25,7 +30,6 @@
             <enum name="Height" value="1" />
         </attr>
         <attr name="aspectRatio" format="float" />
-
         <attr name="cornerRadius" format="dimension" />
         <attr name="roundedCorners">
             <flag name="topLeft" value="1" />
@@ -44,6 +48,7 @@
         <item name="android:numStars">5</item>
         <item name="android:stepSize">0.5</item>
     </style>
+
     <style name="AppBottomSheetDialogTheme" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/AppBottomSheetStyle</item>
     </style>

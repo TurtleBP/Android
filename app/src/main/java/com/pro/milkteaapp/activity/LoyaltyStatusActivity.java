@@ -13,6 +13,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.pro.milkteaapp.databinding.ActivityLoyaltyStatusBinding;
 import com.pro.milkteaapp.fragment.bottomsheet.LoyaltyTierBottomSheet;
 import com.pro.milkteaapp.utils.LoyaltyPolicy;
+import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class LoyaltyStatusActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         b = ActivityLoyaltyStatusBinding.inflate(getLayoutInflater());
+        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(b.getRoot());
 
         setSupportActionBar(b.toolbar);

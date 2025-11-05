@@ -15,6 +15,7 @@ import com.pro.milkteaapp.fragment.AddEditAddressDialog;
 import com.pro.milkteaapp.repository.AddressRepository;
 import com.pro.milkteaapp.databinding.ActivityAddressBinding;
 import com.pro.milkteaapp.models.Address;
+import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,7 @@ public class AddressActivity extends AppCompatActivity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ActivityAddressBinding binding = ActivityAddressBinding.inflate(getLayoutInflater());
+        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(binding.getRoot());
 
         MaterialToolbar tb = binding.toolbar;

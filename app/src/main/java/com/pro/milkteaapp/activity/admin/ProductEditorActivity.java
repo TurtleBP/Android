@@ -24,6 +24,7 @@ import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.activity.MainActivity;
 import com.pro.milkteaapp.data.ProductsIdGenerator;
+import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,7 +64,7 @@ public class ProductEditorActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        StatusBarUtil.setupDefaultStatusBar(this);
         // Chặn non-admin
         if (!new SessionManager(this).isAdmin()) {
             Toast.makeText(this, "Bạn không có quyền truy cập (admin-only)", Toast.LENGTH_SHORT).show();
@@ -113,9 +114,6 @@ public class ProductEditorActivity extends AppCompatActivity {
             toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
             toolbar.setTitle(isEditMode ? R.string.title_edit_product : R.string.title_add_product);
         }
-
-        View btnBack = findViewById(R.id.btnBack);
-        if (btnBack != null) btnBack.setOnClickListener(v -> finish());
 
         btnSave  = isEditMode
                 ? firstNonNull(findViewById(R.id.buttonUpdateProduct), findViewById(R.id.buttonAddProduct))

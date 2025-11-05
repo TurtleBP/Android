@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -25,6 +24,7 @@ import com.pro.milkteaapp.databinding.ActivityOrderDetailBinding;
 import com.pro.milkteaapp.models.Order;
 import com.pro.milkteaapp.models.OrderLine;
 import com.pro.milkteaapp.utils.MoneyUtils;
+import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +47,7 @@ public class OrderDetailActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         b = ActivityOrderDetailBinding.inflate(getLayoutInflater());
+        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(b.getRoot());
 
         // Toolbar + Back
@@ -159,14 +160,8 @@ public class OrderDetailActivity extends AppCompatActivity {
         // Inflate view nhập lý do
         View view = LayoutInflater.from(this).inflate(R.layout._dialog_cancel_reason, null, false);
         // Tận dụng 1 input trong layout có sẵn; hoặc tự tạo layout riêng. Ở đây gán id edtLine1 để nhập lý do.
-        TextInputLayout til; TextInputEditText edt;
-        til = view.findViewById(R.id.edtLine1) != null ? (TextInputLayout) view.findViewById(R.id.edtLine1).getParent().getParent() : null;
+        TextInputEditText edt;
         edt = view.findViewById(R.id.edtLine1);
-
-        // Nếu layout của bạn khác, thay bằng layout nhập lý do riêng:
-        // View view = LayoutInflater.from(this).inflate(R.layout.dialog_cancel_reason, null);
-        // TextInputLayout til = view.findViewById(R.id.tilReason);
-        // TextInputEditText edt = view.findViewById(R.id.edtReason);
 
         if (edt != null) {
             edt.setHint("Nhập lý do hủy đơn");

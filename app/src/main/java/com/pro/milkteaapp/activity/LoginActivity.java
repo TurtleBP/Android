@@ -17,6 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.pro.milkteaapp.activity.admin.AdminMainActivity;
 import com.pro.milkteaapp.databinding.ActivityLoginBinding;
 import com.pro.milkteaapp.models.User;
+import com.pro.milkteaapp.utils.StatusBarUtil;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -37,6 +38,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
+        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(binding.getRoot());
 
         auth = FirebaseAuth.getInstance();

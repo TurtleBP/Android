@@ -17,34 +17,34 @@ import com.pro.milkteaapp.fragment.CartFragment;
 import com.pro.milkteaapp.fragment.HomeFragment;
 import com.pro.milkteaapp.fragment.MessagesFragment;
 import com.pro.milkteaapp.fragment.ProductFragment;
-import com.pro.milkteaapp.fragment.ProfileFragment; // ✅ NEW
+import com.pro.milkteaapp.fragment.ProfileFragment;
+import com.pro.milkteaapp.utils.StatusBarUtil;
 
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
 
-    // Debounce tránh spam giao dịch Binder/Fragment
     private static final long NAV_DEBOUNCE_MS = 400L;
     private long lastNavClick = 0L;
 
-    // Điều hướng bằng intent
     public static final String EXTRA_TARGET_FRAGMENT = "target_fragment";
     private static final String TARGET_HOME = "home";
     private static final String TARGET_PRODUCTS = "products";
     private static final String TARGET_CART = "cart";
     private static final String TARGET_MESSAGES = "messages";
-    private static final String TARGET_PROFILE = "profile"; // ✅ NEW
+    private static final String TARGET_PROFILE = "profile";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
+        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(binding.getRoot());
 
         // Lắng nghe chọn bottom nav
         binding.bottomNavigationView.setOnItemSelectedListener(onNavSelectedListener);
 
-        // Reselect: ví dụ, về top nếu bấm lại tab hiện tại (tùy ý mở rộng cho các tab khác)
+        // Reselect: ví dụ, về top nếu bấm lại tab hiện tại
         binding.bottomNavigationView.setOnItemReselectedListener(item -> {
             Fragment f = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
             // ((HomeFragment) f).scrollToTop();
@@ -87,7 +87,6 @@ public class MainActivity extends AppCompatActivity {
         if (bottomNav != null) {
             bottomNav.setSelectedItemId(R.id.navigation_home);
         } else {
-            // Fallback nếu không có bottom nav
             safeReplaceFragment(new HomeFragment());
         }
     }
@@ -111,20 +110,6 @@ public class MainActivity extends AppCompatActivity {
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, new CartFragment())
-                    .addToBackStack(null)
-                    .commit();
-        }
-    }
-
-    /** ✅ NEW: mở tab Profile từ bất cứ Fragment nào */
-    public void openProfileTab() {
-        NavigationBarView bottomNav = findViewById(R.id.bottomNavigationView);
-        if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.navigation_profile);
-        } else {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, new ProfileFragment())
                     .addToBackStack(null)
                     .commit();
         }
@@ -161,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
             target = new CartFragment();
         } else if (menuId == R.id.navigation_messages) {
             target = new MessagesFragment();
-        } else if (menuId == R.id.navigation_profile) {            // ✅ NEW
+        } else if (menuId == R.id.navigation_profile) {
             target = new ProfileFragment();
         }
         if (target == null) return false;
@@ -198,21 +183,9 @@ public class MainActivity extends AppCompatActivity {
             case TARGET_PRODUCTS -> R.id.navigation_products;
             case TARGET_CART -> R.id.navigation_cart;
             case TARGET_MESSAGES -> R.id.navigation_messages;
-            case TARGET_PROFILE -> R.id.navigation_profile; // ✅ NEW
+            case TARGET_PROFILE -> R.id.navigation_profile;
             default -> 0;
         };
-    }
-    public void openMessagesTab() {
-        NavigationBarView bottomNav = findViewById(R.id.bottomNavigationView);
-        if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.navigation_messages);
-        } else {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, new com.pro.milkteaapp.fragment.MessagesFragment())
-                    .addToBackStack(null)
-                    .commit();
-        }
     }
 
 }

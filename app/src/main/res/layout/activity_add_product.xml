@@ -3,13 +3,26 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
 
-    <!-- Nội dung chính -->
+    <!-- Toolbar cố định, có icon back -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/primary"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:navigationIconTint="@color/white"
+        app:title="Thêm Sản Phẩm Mới"
+        app:titleTextColor="@color/white" />
+
+    <!-- Nội dung cuộn bên dưới -->
     <ScrollView
         android:id="@+id/scrollViewContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
         android:padding="16dp"
         android:background="#F5F5F5"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
@@ -19,23 +32,15 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <Button
-                android:id="@+id/btnBack"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Quay lại"/>
-
-            <!-- Header -->
+            <!-- Header (giữ style nhẹ hơn vì đã có title trên Toolbar) -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Thêm Sản Phẩm Mới"
-                android:textSize="24sp"
+                android:text="Điền thông tin sản phẩm"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#333333"
-                android:gravity="center"
-                android:layout_marginBottom="24dp"
-                android:padding="16dp" />
+                android:layout_marginBottom="12dp" />
 
             <!-- Tên sản phẩm -->
             <com.google.android.material.textfield.TextInputLayout
@@ -65,7 +70,7 @@
                     android:inputType="number" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Danh mục (Dropdown) -->
+            <!-- Danh mục (Exposed Dropdown) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilCategory"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
@@ -73,12 +78,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:hint="Danh mục">
+
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/actCategory"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:imeOptions="actionDone"/>
+                    android:imeOptions="actionDone"
+                    android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Hình ảnh -->
@@ -111,41 +117,38 @@
                     android:minLines="3" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Button Thêm -->
-            <Button
+            <!-- Nút Thêm (Filled theo primary) -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonAddProduct"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Thêm Sản Phẩm"
                 android:textSize="18sp"
-                android:padding="16dp"
-                android:backgroundTint="#4CAF50"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="16dp" />
+                android:backgroundTint="@color/primary"
+                android:layout_marginBottom="12dp" />
 
-            <!-- Button Reset -->
-            <Button
+            <!-- Nút Reset (Tonal/Outlined cho dịu màu) -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonReset"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Làm Mới Form"
-                android:textSize="16sp"
-                android:padding="12dp"
-                android:backgroundTint="#FF9800"
-                android:textColor="#FFFFFF" />
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:backgroundTint="@color/primary_dark"
+                android:text="Làm Mới Form" />
 
             <!-- Progress Bar -->
             <ProgressBar
                 android:id="@+id/progressBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:visibility="gone"
-                android:layout_marginTop="16dp" />
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:visibility="gone" />
 
         </LinearLayout>
     </ScrollView>
-
-    <!-- Bottom Navigation (nếu có trong layout khác) -->
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

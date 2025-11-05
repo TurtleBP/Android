@@ -63,8 +63,11 @@
             android:theme="@style/Theme.MilkteaApp.NoActionBar" />
         <activity
             android:name=".activity.admin.AdminOrderDetailActivity"
-            android:exported="false" />
-        <activity android:name=".activity.LoyaltyStatusActivity" />
+            android:exported="false"
+            android:theme="@style/Theme.MilkteaApp.NoActionBar"/>
+        <activity android:name=".activity.LoyaltyStatusActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MilkteaApp.NoActionBar"/>
 
 
         <!-- Admin product editor -->

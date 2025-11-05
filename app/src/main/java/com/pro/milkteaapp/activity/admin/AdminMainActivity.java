@@ -7,6 +7,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,6 +26,7 @@ import com.pro.milkteaapp.fragment.admin.AdminOrdersFragment;
 import com.pro.milkteaapp.fragment.admin.AdminStatisticsFragment;
 import com.pro.milkteaapp.fragment.admin.AdminUsersFragment;
 import com.pro.milkteaapp.fragment.admin.management.ManagementFragment;
+import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +54,7 @@ public class AdminMainActivity extends AppCompatActivity {
     private final Map<String, Fragment> tagToFragment = new HashMap<>();
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         // nếu chưa đăng nhập thì đá về login
@@ -62,6 +64,7 @@ public class AdminMainActivity extends AppCompatActivity {
         }
 
         binding = ActivityAdminMainBinding.inflate(getLayoutInflater());
+        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(binding.getRoot());
 
         // map id bottom-nav -> tag fragment
@@ -72,6 +75,7 @@ public class AdminMainActivity extends AppCompatActivity {
 
         setupToolbar();
         setupBottomNavigation();
+        setupBackPressDispatcher(); // <-- migrate back gestures
 
         // kiểm tra quyền từ Session trước
         SessionManager sm = new SessionManager(this);
@@ -243,19 +247,29 @@ public class AdminMainActivity extends AppCompatActivity {
         return true;
     }
 
-    @Override
-    public void onBackPressed() {
-        Fragment current = tagToFragment.get(idToTag.get(currentTabId));
-        if (current != null && current.getChildFragmentManager().popBackStackImmediate()) {
-            return;
-        }
+    // MIGRATION: sử dụng OnBackPressedDispatcher thay cho onBackPressed() deprecated
+    private void setupBackPressDispatcher() {
         // back về tab Đơn hàng nếu đang ở tab khác
-        if (currentTabId != R.id.adminOrders) {
-            binding.bottomNavigationView.setSelectedItemId(R.id.adminOrders);
-            switchTo(R.id.adminOrders);
-        } else {
-            super .onBackPressed();
-        }
+        // hành vi mặc định: đóng Activity
+        // Callback back mới (AndroidX)
+        OnBackPressedCallback backPressedCallback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                Fragment current = tagToFragment.get(idToTag.get(currentTabId));
+                if (current != null && current.getChildFragmentManager().popBackStackImmediate()) {
+                    return;
+                }
+                // back về tab Đơn hàng nếu đang ở tab khác
+                if (currentTabId != R.id.adminOrders) {
+                    binding.bottomNavigationView.setSelectedItemId(R.id.adminOrders);
+                    switchTo(R.id.adminOrders);
+                } else {
+                    // hành vi mặc định: đóng Activity
+                    finish();
+                }
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
     }
 
     private void goToUserRoot() {

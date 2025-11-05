@@ -31,6 +31,7 @@ import com.google.firebase.firestore.SetOptions;
 import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.databinding.ActivityEditProfileBinding;
+import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +50,7 @@ public class EditProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityEditProfileBinding.inflate(getLayoutInflater());
+        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(binding.getRoot());
 
         auth = FirebaseAuth.getInstance();

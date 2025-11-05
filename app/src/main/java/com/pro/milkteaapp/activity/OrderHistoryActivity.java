@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.pro.milkteaapp.databinding.ActivityOrderHistoryBinding;
 import com.pro.milkteaapp.fragment.OrdersFragment;
+import com.pro.milkteaapp.utils.StatusBarUtil;
 
 public class OrderHistoryActivity extends AppCompatActivity {
 
@@ -14,6 +15,7 @@ public class OrderHistoryActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ActivityOrderHistoryBinding b = ActivityOrderHistoryBinding.inflate(getLayoutInflater());
+        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(b.getRoot());
 
         // Toolbar + Back
