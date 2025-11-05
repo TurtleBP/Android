@@ -8,11 +8,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.WriteBatch;
+import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.fragment.bottomsheet.CheckoutBottomSheet;
 import com.pro.milkteaapp.models.CartItem;
 import com.pro.milkteaapp.models.CheckoutInfo;
@@ -120,12 +120,19 @@ public class CheckoutActivity extends AppCompatActivity
             return;
         }
 
-        String uid = auth.getCurrentUser().getUid();
+        // ✅ Lấy userId hiệu lực: ưu tiên USRxxxxx từ SessionManager, fallback Firebase UID
+        String effectiveUid = null;
+        try {
+            effectiveUid = new SessionManager(getApplicationContext()).getUid();
+        } catch (Throwable ignored) {}
+        if (TextUtils.isEmpty(effectiveUid)) {
+            effectiveUid = auth.getCurrentUser().getUid();
+        }
 
         long subtotal = getSubtotal();
         long discount = getDiscount();
         long shipping = getShippingFee();
-        long total = getGrandTotal();
+        long finalTotal = getGrandTotal();
 
         String address = checkoutInfo != null ? checkoutInfo.getAddress() : "";
         String paymentMethod = checkoutInfo != null ? checkoutInfo.getPaymentMethod() : "COD";
@@ -139,24 +146,24 @@ public class CheckoutActivity extends AppCompatActivity
             return;
         }
 
+        // Có thể dùng OrdersIdGenerator nếu dự án của bạn đang áp dụng; ở đây giữ nguyên doc id tự sinh
         String orderId = db.collection("orders").document().getId();
 
         Map<String, Object> order = new HashMap<>();
         order.put("orderId", orderId);
-        order.put("userId", uid);
+        order.put("userId", effectiveUid);        // ✅ đồng bộ users/{USRxxxxx}
         order.put("name", null);
         order.put("phone", null);
         order.put("address", address);
         order.put("subtotal", subtotal);
         order.put("discount", discount);
         order.put("shippingFee", shipping);
-        order.put("total", total);
+        order.put("finalTotal", finalTotal);      // ✅ đổi từ "total" → "finalTotal"
         order.put("paymentMethod", paymentMethod);
         order.put("shippingLabel", shippingLabel);
         order.put("voucherCode", TextUtils.isEmpty(voucherCode) ? null : voucherCode);
-        // tạo đơn ở trạng thái pending; chưa cộng điểm
-        order.put("status", "pending");
-        order.put("createdAt", Timestamp.now());
+        order.put("status", "PENDING");           // ✅ chuẩn hóa status
+        order.put("createdAt", FieldValue.serverTimestamp()); // ✅ đồng bộ timestamp server
 
         WriteBatch batch = db.batch();
         batch.set(db.collection("orders").document(orderId), order);
@@ -172,7 +179,7 @@ public class CheckoutActivity extends AppCompatActivity
             row.put("unitPrice", item.getUnitPrice());
             row.put("lineTotal", item.getTotalPrice());
 
-            // giữ thêm dữ liệu chi tiết từ nhánh detail-tea
+            // Chi tiết tùy chọn
             row.put("sugar", item.getSugar());
             row.put("ice", item.getIce());
             row.put("note", item.getNote());
@@ -199,10 +206,13 @@ public class CheckoutActivity extends AppCompatActivity
             );
         }
 
+        final String finalEffectiveUid = effectiveUid;
+        final String finalVoucherCode = voucherCode;
+
         batch.commit()
                 .addOnSuccessListener(v -> {
                     // Không cộng điểm ở đây — điểm chỉ cộng khi Admin xác nhận FINISHED
-                    recordVoucherUsageIfNeeded(uid, voucherCode,
+                    recordVoucherUsageIfNeeded(finalEffectiveUid, finalVoucherCode,
                             () -> {
                                 Toast.makeText(this, "Đặt hàng thành công!", Toast.LENGTH_SHORT).show();
                                 finish();
@@ -215,8 +225,7 @@ public class CheckoutActivity extends AppCompatActivity
                 .addOnFailureListener(e -> Toast.makeText(this, "Lỗi đặt hàng: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
-    // ====== Giữ lại: phương thức hỗ trợ (không gọi tại thời điểm tạo đơn) ======
-
+    // ====== Ghi nhận users/{uid}/voucher_usages/{voucherId}.count += 1 nếu có code ======
     private void recordVoucherUsageIfNeeded(@NonNull String uid,
                                             @Nullable String voucherCode,
                                             @NonNull Runnable onDone,

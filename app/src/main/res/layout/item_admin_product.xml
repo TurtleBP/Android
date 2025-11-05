@@ -61,55 +61,6 @@
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginTop="4dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tồn kho:"
-                    android:textColor="@color/gray_600"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/productStock"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0"
-                    android:textColor="@color/black"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:layout_marginStart="4dp" />
-
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="12dp"
-                    android:background="@color/light_gray"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Đã bán:"
-                    android:textColor="@color/gray_600"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/productSold"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0"
-                    android:textColor="@color/black"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:layout_marginStart="4dp" />
-            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
@@ -128,7 +79,7 @@
                 app:iconTint="@color/white"
                 app:backgroundTint="@color/primary"
                 app:iconGravity="end"
-            style="@style/Widget.MaterialComponents.Button.Icon" />
+                style="@style/Widget.MaterialComponents.Button.Icon" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDelete"

@@ -7,27 +7,39 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.*;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.*;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SimpleItemAnimator;
 
-import com.google.firebase.auth.*;
-import com.google.firebase.firestore.*;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.pro.milkteaapp.R;
+import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.activity.MainActivity;
 import com.pro.milkteaapp.adapter.CartAdapter;
 import com.pro.milkteaapp.databinding.FragmentCartBinding;
 import com.pro.milkteaapp.fragment.bottomsheet.CheckoutBottomSheet;
-import com.pro.milkteaapp.models.*;
+import com.pro.milkteaapp.models.Address;
+import com.pro.milkteaapp.models.CartItem;
+import com.pro.milkteaapp.models.CheckoutInfo;
 import com.pro.milkteaapp.utils.MoneyUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class CartFragment extends Fragment
         implements CartAdapter.OnItemActionClickListener,
@@ -65,7 +77,7 @@ public class CartFragment extends Fragment
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle s) {
+    public View onCreateView(@NonNull android.view.LayoutInflater inflater, @Nullable android.view.ViewGroup container, @Nullable Bundle s) {
         binding = FragmentCartBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -93,6 +105,14 @@ public class CartFragment extends Fragment
         binding.cartRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new CartAdapter(getContext(), cartItems, this);
         binding.cartRecyclerView.setAdapter(adapter);
+
+        // Giảm nháy: tắt change animations & cố định kích thước
+        RecyclerView rv = binding.cartRecyclerView;
+        RecyclerView.ItemAnimator ia = rv.getItemAnimator();
+        if (ia instanceof SimpleItemAnimator) {
+            ((SimpleItemAnimator) ia).setSupportsChangeAnimations(false);
+        }
+        rv.setHasFixedSize(true);
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -146,10 +166,9 @@ public class CartFragment extends Fragment
         binding.checkoutButton.setEnabled(!cartItems.isEmpty());
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     @Override public void onResume() {
         super.onResume();
-        if (adapter != null) adapter.notifyDataSetChanged();
+        // KHÔNG gọi notifyDataSetChanged() để tránh chớp toàn list
         updateTotal();
     }
 
@@ -174,7 +193,7 @@ public class CartFragment extends Fragment
     @Override public void onQuantityIncreased(int position) {
         if (position >= 0 && position < cartItems.size()) {
             cartItems.get(position).increaseQuantity();
-            if (adapter != null) adapter.notifyItemChanged(position);
+            if (adapter != null) adapter.notifyItemChanged(position, "QTY_TOTAL");
             updateTotal();
         }
     }
@@ -184,7 +203,7 @@ public class CartFragment extends Fragment
             CartItem item = cartItems.get(position);
             if (item.getQuantity() > 1) {
                 item.decreaseQuantity();
-                if (adapter != null) adapter.notifyItemChanged(position);
+                if (adapter != null) adapter.notifyItemChanged(position, "QTY_TOTAL");
                 updateTotal();
             } else onItemRemoved(position);
         }
@@ -199,7 +218,7 @@ public class CartFragment extends Fragment
 
     @SuppressLint("NotifyDataSetChanged")
     private void placeOrder(@NonNull CheckoutInfo info) {
-        FirebaseUser user = auth.getCurrentUser();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             if (getContext() != null) {
                 Toast.makeText(getContext(), "Vui lòng đăng nhập trước khi đặt hàng", Toast.LENGTH_SHORT).show();
@@ -210,47 +229,48 @@ public class CartFragment extends Fragment
         final Context app = requireContext().getApplicationContext();
         if (binding != null) binding.checkoutButton.setEnabled(false);
 
-        Map<String, Object> payload = buildOrderPayload(user.getUid(), cartItems, info);
+        // ✅ Dùng custom userId (USRxxxxx) nếu có, fallback Firebase UID khi chưa có
+        String customUid = null;
+        try { customUid = new SessionManager(app).getUid(); } catch (Throwable ignored) {}
+        String effectiveUserId = (customUid != null && !customUid.isEmpty())
+                ? customUid : user.getUid();
 
-        // === DÙNG ID TÙY BIẾN ===
+        Map<String, Object> payload = buildOrderPayload(effectiveUserId, cartItems, info);
+
+        // === DÙNG ID TÙY BIẾN CHO ORDERS ===
         com.pro.milkteaapp.data.OrdersIdGenerator gen = new com.pro.milkteaapp.data.OrdersIdGenerator();
-        gen.nextOrderId() // ví dụ: ORD + 5 chữ số
+        gen.nextOrderId()
                 .addOnSuccessListener(orderId ->
-                        db.collection("orders").document(orderId).set(payload)
-                                .addOnSuccessListener(aVoid -> {
-                                    // Ghi nhận lượt dùng voucher (nếu có)
-                                    recordVoucherUsageIfNeeded(user.getUid(), info.voucherCode,
-                                            () -> {
+                        FirebaseFirestore.getInstance().collection("orders").document(orderId).set(payload)
+                                .addOnSuccessListener(aVoid -> recordVoucherUsageIfNeeded(
+                                        effectiveUserId, // ✅ đồng bộ với users/{USRxxxxx}
+                                        info.voucherCode,
+                                        () -> {
+                                            cartItems.clear();
+                                            Toast.makeText(app, app.getString(R.string.order_placed_successfully), Toast.LENGTH_SHORT).show();
 
-                                                // *** BỎ GỌI CỘNG ĐIỂM Ở ĐÂY ***
-                                                // updateLoyaltyPoints(user.getUid(), info.grandTotal);
+                                            runOnUiSafe(() -> {
+                                                if (adapter != null) adapter.notifyDataSetChanged();
+                                                updateTotal();
 
-                                                cartItems.clear();
-                                                Toast.makeText(app, app.getString(R.string.order_placed_successfully), Toast.LENGTH_SHORT).show();
+                                                Intent i = new Intent(requireActivity(), MainActivity.class);
+                                                i.putExtra(MainActivity.EXTRA_TARGET_FRAGMENT, "activities:pending");
+                                                startActivity(i);
 
-                                                runOnUiSafe(() -> {
-                                                    if (adapter != null) adapter.notifyDataSetChanged();
-                                                    updateTotal();
-
-                                                    Intent i = new Intent(requireActivity(), MainActivity.class);
-                                                    i.putExtra(MainActivity.EXTRA_TARGET_FRAGMENT, "activities:pending");
-                                                    startActivity(i);
-
-                                                    if (binding != null) binding.checkoutButton.setEnabled(true);
-                                                });
-                                            },
-                                            e -> {
-                                                // Không chặn đơn nếu lỗi usage
-                                                Toast.makeText(app, "Đơn đã tạo, nhưng cập nhật lượt voucher lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
-
-                                                cartItems.clear();
-                                                runOnUiSafe(() -> {
-                                                    if (adapter != null) adapter.notifyDataSetChanged();
-                                                    updateTotal();
-                                                    if (binding != null) binding.checkoutButton.setEnabled(true);
-                                                });
+                                                if (binding != null) binding.checkoutButton.setEnabled(true);
                                             });
-                                })
+                                        },
+                                        e -> {
+                                            Toast.makeText(app, "Đơn đã tạo, nhưng cập nhật lượt voucher lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+
+                                            cartItems.clear();
+                                            runOnUiSafe(() -> {
+                                                if (adapter != null) adapter.notifyDataSetChanged();
+                                                updateTotal();
+                                                if (binding != null) binding.checkoutButton.setEnabled(true);
+                                            });
+                                        }))
+
                                 .addOnFailureListener(e -> {
                                     Toast.makeText(app, "Lỗi tạo đơn: " + e.getMessage(), Toast.LENGTH_LONG).show();
                                     runOnUiSafe(() -> {
@@ -267,60 +287,6 @@ public class CartFragment extends Fragment
                         if (binding != null) binding.checkoutButton.setEnabled(true);
                     });
                 });
-    }
-
-    // Giữ nguyên method để tham khảo (KHÔNG gọi ở bước đặt hàng).
-    private void updateLoyaltyPoints(String userId, double totalAmount) {
-        if (userId == null || userId.isEmpty() || totalAmount == 0) {
-            Log.e("LoyaltyUpdate", "Không đủ thông tin để cộng điểm.");
-            return;
-        }
-
-        // quy tắc: 10k = 1 điểm
-        final long pointsToAdd = (long) Math.floor(totalAmount / 10000);
-
-        if (pointsToAdd == 0) {
-            Log.d("LoyaltyUpdate", "Đơn hàng không đủ giá trị để cộng điểm.");
-            return;
-        }
-
-        final FirebaseFirestore db = FirebaseFirestore.getInstance();
-        final DocumentReference userRef = db.collection("users").document(userId);
-
-        db.runTransaction(transaction -> {
-                    DocumentSnapshot userDoc = transaction.get(userRef);
-
-                    if (!userDoc.exists()) {
-                        throw new FirebaseFirestoreException("User không tồn tại.",
-                                FirebaseFirestoreException.Code.NOT_FOUND);
-                    }
-
-                    long currentPoints = 0;
-                    if (userDoc.contains("loyaltyPoints")) {
-                        currentPoints = userDoc.getLong("loyaltyPoints");
-                    }
-
-                    long newTotalPoints = currentPoints + pointsToAdd;
-                    String newTier = "Đồng"; // Hạng mặc định
-
-                    if (newTotalPoints >= 2000) {
-                        newTier = "Vàng";
-                    } else if (newTotalPoints >= 500) {
-                        newTier = "Bạc";
-                    } else {
-                        String currentTier = userDoc.getString("loyaltyTier");
-                        newTier = (currentTier != null) ? currentTier : "Đồng";
-                    }
-
-                    transaction.update(userRef,
-                            "loyaltyPoints", newTotalPoints,
-                            "loyaltyTier", newTier
-                    );
-
-                    return null;
-                })
-                .addOnSuccessListener(aVoid -> Log.d("LoyaltyUpdate", "Đã cộng thành công " + pointsToAdd + " điểm cho user " + userId))
-                .addOnFailureListener(e -> Log.e("LoyaltyUpdate", "Cộng điểm thất bại: ", e));
     }
 
     /** Build payload đơn hàng theo CheckoutInfo (đã có giảm giá/ship/tổng) */
@@ -383,7 +349,7 @@ public class CartFragment extends Fragment
 
                     db.collection("users").document(uid)
                             .collection("voucher_usages").document(voucherId)
-                            .update("count", FieldValue.increment(1))
+                            .update("count", com.google.firebase.firestore.FieldValue.increment(1))
                             .addOnSuccessListener(x -> onDone.run())
                             .addOnFailureListener(e -> {
                                 Map<String,Object> seed = new HashMap<>();

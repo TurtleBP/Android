@@ -16,6 +16,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.pro.milkteaapp.R;
+import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.adapter.MessagesAdapter;
 import com.pro.milkteaapp.databinding.FragmentMessagesBinding;
 import com.pro.milkteaapp.fragment.bottomsheet.RateOrderBottomSheet;
@@ -46,7 +47,7 @@ public class MessagesFragment extends Fragment {
 
     private void startListening() {
         showLoading(true);
-        String uid = getUidOrNotify();
+        String uid = getUnifiedUidOrNotify();
         if (uid == null) return;
 
         Query q = FirebaseFirestore.getInstance()
@@ -56,6 +57,7 @@ public class MessagesFragment extends Fragment {
 
         if (registration != null) { registration.remove(); registration = null; }
         registration = q.addSnapshotListener((snap, err) -> {
+            if (binding == null) return;
             binding.swipeRefresh.setRefreshing(false);
             showLoading(false);
             if (err != null) {
@@ -78,14 +80,16 @@ public class MessagesFragment extends Fragment {
     }
 
     private void reloadOnce() {
-        String uid = getUidOrNotify();
+        String uid = getUnifiedUidOrNotify();
         if (uid == null) return;
+
         FirebaseFirestore.getInstance()
                 .collection("users").document(uid)
                 .collection("inbox")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnCompleteListener(t -> {
+                    if (binding == null) return;
                     binding.swipeRefresh.setRefreshing(false);
                     if (!t.isSuccessful()) {
                         Exception e = t.getException();
@@ -105,15 +109,13 @@ public class MessagesFragment extends Fragment {
     }
 
     private void onMessageClick(@NonNull MessageModel m) {
-        // đánh dấu đã đọc
-        String uid = getUidOrNotify();
+        String uid = getUnifiedUidOrNotify();
         if (uid != null) {
             FirebaseFirestore.getInstance()
                     .collection("users").document(uid)
                     .collection("inbox").document(m.getId())
                     .update("read", true, "readAt", Timestamp.now());
         }
-        // mở BottomSheet đánh giá nếu là đơn hoàn thành
         if ("order_done".equals(m.getType()) && m.getOrderId() != null) {
             RateOrderBottomSheet.newInstance(m.getOrderId())
                     .show(getParentFragmentManager(), "rate_order");
@@ -121,11 +123,13 @@ public class MessagesFragment extends Fragment {
     }
 
     private void toggleEmpty(boolean empty) {
+        if (binding == null) return;
         binding.recyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
         binding.emptyView.setVisibility(empty ? View.VISIBLE : View.GONE);
     }
 
     private void showLoading(boolean show) {
+        if (binding == null) return;
         binding.progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
         if (show) {
             binding.recyclerView.setVisibility(View.GONE);
@@ -133,7 +137,24 @@ public class MessagesFragment extends Fragment {
         }
     }
 
-    private String getUidOrNotify() {
+    /**
+     * Lấy userId đồng nhất:
+     * - Ưu tiên SessionManager.getUid() (USRxxxxx)
+     * - Fallback FirebaseAuth UID nếu chưa có (để không vỡ luồng cũ)
+     */
+    @Nullable
+    private String getUnifiedUidOrNotify() {
+        // Ưu tiên custom userId (USRxxxxx)
+        String customId = null;
+        try {
+            customId = new SessionManager(requireContext()).getUid();
+        } catch (Throwable ignored) {}
+
+        if (customId != null && !customId.trim().isEmpty()) {
+            return customId.trim();
+        }
+
+        // Fallback sang Firebase UID (không khuyến nghị, nhưng an toàn)
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             Toast.makeText(getContext(), "Bạn chưa đăng nhập", Toast.LENGTH_LONG).show();
             return null;

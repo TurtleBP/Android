@@ -26,6 +26,7 @@ import com.pro.milkteaapp.adapter.admin.AdminOrdersAdapter;
 import com.pro.milkteaapp.models.Order;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -92,9 +93,9 @@ public class AdminOrdersFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new AdminOrdersAdapter(
                 this::onItemClicked,
-                null, // Không dùng xác nhận
-                null, // Không dùng huỷ
-                this::onDeleteClicked // Giữ lại chức năng xoá
+                null, // Không dùng xác nhận ở màn này
+                null, // Không dùng huỷ ở màn này
+                this::onDeleteClicked // Giữ lại chức năng xoá với đơn Cancelled
         );
 
         // Tắt toàn bộ nút confirm & cancel
@@ -128,13 +129,13 @@ public class AdminOrdersFragment extends Fragment {
                     .whereEqualTo("status", "PENDING")
                     .orderBy("createdAt", Query.Direction.DESCENDING);
         } else if ("FINISHED".equalsIgnoreCase(currentStatus)) {
-            // vẫn orderBy createdAt (ít index), client sẽ sort lại theo finishedAt
+            // vẫn orderBy createdAt (ít index), client sort lại theo finishedAt
             q = db.collection("orders")
                     .whereEqualTo("status", "FINISHED")
                     .orderBy("createdAt", Query.Direction.DESCENDING);
         } else { // CANCELLED tab → lấy cả CANCELLED & CANCELED
             q = db.collection("orders")
-                    .whereIn("status", java.util.Arrays.asList("CANCELLED", "CANCELED"))
+                    .whereIn("status", Arrays.asList("CANCELLED", "CANCELED"))
                     .orderBy("createdAt", Query.Direction.DESCENDING);
         }
 
@@ -155,8 +156,9 @@ public class AdminOrdersFragment extends Fragment {
             List<Order> data = new ArrayList<>();
             if (snap != null) {
                 for (DocumentSnapshot d : snap.getDocuments()) {
-                    Order o = d.toObject(Order.class);
-                    if (o != null) { o.setId(d.getId()); data.add(o); }
+                    // Dùng factory để map an toàn mọi alias field
+                    Order o = Order.from(d);
+                    data.add(o);
                 }
             }
 
@@ -207,9 +209,8 @@ public class AdminOrdersFragment extends Fragment {
     @Nullable
     private static Timestamp firstNonNullCancelTs(@NonNull Order o) {
         if (o.getCancelledAt() != null) return o.getCancelledAt(); // British
-        // Nếu model có thêm field khác, có thể bổ sung getter getCanceledAt()
         try {
-            // phản xạ nhẹ nếu bạn có cả 2 field
+            // nếu model có thêm getCanceledAt() (US) thì tận dụng
             java.lang.reflect.Method m = o.getClass().getMethod("getCanceledAt");
             Object v = m.invoke(o);
             if (v instanceof Timestamp) return (Timestamp) v;

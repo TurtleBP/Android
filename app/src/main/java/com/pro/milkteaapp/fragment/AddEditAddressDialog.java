@@ -3,7 +3,7 @@ package com.pro.milkteaapp.fragment;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.view.*;
+import android.view.View;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
@@ -13,8 +13,8 @@ import androidx.fragment.app.DialogFragment;
 
 import com.google.android.material.button.MaterialButton;
 import com.pro.milkteaapp.R;
-import com.pro.milkteaapp.repository.AddressRepository;
 import com.pro.milkteaapp.models.Address;
+import com.pro.milkteaapp.repository.AddressRepository;
 
 public class AddEditAddressDialog extends DialogFragment {
 
@@ -30,9 +30,10 @@ public class AddEditAddressDialog extends DialogFragment {
         return d;
     }
 
-    @NonNull @Override
+    @NonNull
+    @Override
     public Dialog onCreateDialog(@Nullable Bundle s) {
-        View v = LayoutInflater.from(requireContext()).inflate(R.layout._dialog_address_editor, null, false);
+        View v = getLayoutInflater().inflate(R.layout._dialog_address_editor, null, false);
 
         EditText edtName = v.findViewById(R.id.edtName);
         EditText edtPhone = v.findViewById(R.id.edtPhone);
@@ -54,7 +55,8 @@ public class AddEditAddressDialog extends DialogFragment {
             edtPostal.setText(editing.getPostalCode());
         }
 
-        AddressRepository repo = new AddressRepository();
+        // ✅ Khởi tạo repo với Context để lấy userId USRxxxxx từ SessionManager
+        AddressRepository repo = new AddressRepository(requireContext());
 
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setTitle(editing == null ? R.string.add_address : R.string.edit_address)
@@ -68,12 +70,12 @@ public class AddEditAddressDialog extends DialogFragment {
 
             if (TextUtils.isEmpty(name) || TextUtils.isEmpty(phone) ||
                     TextUtils.isEmpty(line1) || TextUtils.isEmpty(city) || TextUtils.isEmpty(province)) {
-                // TODO: setError cho từng ô nếu cần
+                // TODO: setError chi tiết nếu cần
                 return;
             }
 
             Address out = editing != null ? editing : new Address();
-            // ❌ KHÔNG set UUID thủ công ở đây — để repo quyết định add/update
+            // Không sinh UUID thủ công — repo sẽ add/update và tự set id trả về
             out.setFullName(name);
             out.setPhone(phone);
             out.setLine1(line1);
@@ -84,14 +86,23 @@ public class AddEditAddressDialog extends DialogFragment {
 
             btnSave.setEnabled(false);
             repo.addOrUpdate(out, saved -> {
-                if (getActivity() instanceof Listener) ((Listener) getActivity()).onAddressSaved(saved, editing != null);
-                else if (getParentFragment() instanceof Listener) ((Listener) getParentFragment()).onAddressSaved(saved, editing != null);
+                // Báo về cho host (Activity/Fragment) nếu có implement Listener
+                if (getActivity() instanceof Listener) {
+                    ((Listener) getActivity()).onAddressSaved(saved, editing != null);
+                } else if (getParentFragment() instanceof Listener) {
+                    ((Listener) getParentFragment()).onAddressSaved(saved, editing != null);
+                }
                 dismiss();
-            }, e -> { btnSave.setEnabled(true); /* TODO: show error */ });
+            }, e -> {
+                btnSave.setEnabled(true);
+                // TODO: hiển thị lỗi (Toast/Snackbar)
+            });
         });
 
         return dialog;
     }
 
-    private static String val(EditText e) { return e.getText() != null ? e.getText().toString().trim() : ""; }
+    private static String val(EditText e) {
+        return e.getText() != null ? e.getText().toString().trim() : "";
+    }
 }

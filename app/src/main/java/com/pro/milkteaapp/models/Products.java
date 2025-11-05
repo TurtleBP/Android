@@ -17,21 +17,14 @@ public class Products implements Serializable {
     private String status;
     private String searchableName;
     private String createdByUid;
-
-    private Integer stock = 0;     // nullable an toàn
-    private Integer soldCount = 0;
-
-    // @ServerTimestamp
     private Date createdAt;
-    // @ServerTimestamp
     private Date updatedAt;
 
     public Products() {}
 
     public Products(String id, String name, Double price, String category,
                     String imageUrl, String description, String status,
-                    String searchableName, String createdByUid,
-                    Integer stock, Integer soldCount) {
+                    String searchableName, String createdByUid) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -41,8 +34,6 @@ public class Products implements Serializable {
         this.status = status;
         this.searchableName = searchableName;
         this.createdByUid = createdByUid;
-        this.stock = stock;
-        this.soldCount = soldCount;
     }
 
     // Getters
@@ -55,8 +46,7 @@ public class Products implements Serializable {
     public String getStatus() { return status; }
     public String getSearchableName() { return searchableName; }
     public String getCreatedByUid() { return createdByUid; }
-    public Integer getStock() { return stock; }
-    public Integer getSoldCount() { return soldCount; }
+
     public Date getCreatedAt() { return createdAt; }
     public Date getUpdatedAt() { return updatedAt; }
 
@@ -70,8 +60,8 @@ public class Products implements Serializable {
     public void setStatus(String status) { this.status = status; }
     public void setSearchableName(String searchableName) { this.searchableName = searchableName; }
     public void setCreatedByUid(String createdByUid) { this.createdByUid = createdByUid; }
-    public void setStock(Integer stock) { this.stock = stock; }
-    public void setSoldCount(Integer soldCount) { this.soldCount = soldCount; }
+
+
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 

@@ -1,5 +1,7 @@
 package com.pro.milkteaapp.fragment.bottomsheet;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,9 +14,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.adapter.CheckoutItemAdapter;
-import com.pro.milkteaapp.databinding.CheckoutBottomSheetBinding;
+import com.pro.milkteaapp.databinding.BottomsheetCheckoutBinding;
 import com.pro.milkteaapp.fragment.pickersheet.AddressPickerSheet;
 import com.pro.milkteaapp.fragment.pickersheet.PaymentMethodPickerSheet;
 import com.pro.milkteaapp.fragment.pickersheet.ShippingPickerSheet;
@@ -49,12 +53,12 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         return f;
     }
 
-    private CheckoutBottomSheetBinding b;
+    private BottomsheetCheckoutBinding b;
     private OnCheckoutConfirmListener listener;
     private final List<CartItem> items = new ArrayList<>();
 
     // State
-    private Address selectedAddress;
+    @Nullable private Address selectedAddress;
     private String paymentMethod = "COD";
     @Nullable private Voucher selectedVoucher = null;
     private String voucherCode = "";
@@ -63,6 +67,10 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
 
     @Nullable private User currentUser;
 
+    // ====== Prefs lưu địa chỉ đã chọn gần nhất ======
+    private static final String PREFS = "checkout_prefs";
+    private static final String KEY_LAST_ADDR_ID = "last_checkout_address_id";
+
     public void setOnCheckoutConfirmListener(OnCheckoutConfirmListener l) {
         this.listener = l;
     }
@@ -70,7 +78,7 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup container, @Nullable Bundle s) {
-        b = CheckoutBottomSheetBinding.inflate(inf, container, false);
+        b = BottomsheetCheckoutBinding.inflate(inf, container, false);
         return b.getRoot();
     }
 
@@ -92,6 +100,9 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         b.rvItems.setLayoutManager(new LinearLayoutManager(requireContext()));
         b.rvItems.setAdapter(new CheckoutItemAdapter(requireContext(), items));
 
+        // 1) Tải địa chỉ đã chọn gần nhất (nếu có), nếu không -> 2) lấy địa chỉ mặc định
+        loadInitialAddressThenRender();
+
         // Tải thông tin User để tính giảm giá
         loadUserAndRender();
 
@@ -103,7 +114,11 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
             AddressPickerSheet sheet = new AddressPickerSheet();
             sheet.setListener(addr -> {
                 selectedAddress = addr;
-                setText(b.tvAddressValue, addr != null ? addr.displayLine() : "");
+                // Lưu lại ID địa chỉ đã chọn để lần sau mở Checkout sẽ ưu tiên hiển thị
+                if (addr != null && addr.getId() != null) {
+                    saveLastAddressId(addr.getId());
+                }
+                setText(b.tvAddressValue, addr != null ? addr.displayLine() : "Chọn địa chỉ");
                 updateSummaryUI();
             });
             sheet.show(getParentFragmentManager(), "AddressPicker");
@@ -125,8 +140,8 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
             Bundle args = new Bundle();
             args.putLong("subtotal", calcSubtotal());
             args.putString("payment", paymentMethod);
-            String uid = FirebaseAuth.getInstance().getCurrentUser() != null
-                    ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
+            // ✅ Truyền custom userId (USRxxxxx) cho sheet lọc voucher theo user
+            String uid = getEffectiveUserId(requireContext());
             args.putString("userId", uid);
 
             VoucherListPickerSheet sheet = new VoucherListPickerSheet();
@@ -163,6 +178,79 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         });
     }
 
+    // ====== Default Address logic ======
+
+    private void loadInitialAddressThenRender() {
+        String uid = getEffectiveUserId(requireContext());
+        if (uid == null) {
+            // Chưa login -> để trống
+            setText(b.tvAddressValue, "Chọn địa chỉ");
+            return;
+        }
+
+        String lastId = loadLastAddressId();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        if (lastId != null && !lastId.trim().isEmpty()) {
+            // Ưu tiên địa chỉ đã chọn lần trước
+            db.collection("users").document(uid)
+                    .collection("addresses").document(lastId)
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            Address a = doc.toObject(Address.class);
+                            if (a != null) {
+                                a.setId(doc.getId());
+                                selectedAddress = a;
+                                setText(b.tvAddressValue, a.displayLine());
+                                updateSummaryUI();
+                                return;
+                            }
+                        }
+                        // Không còn tồn tại -> fallback sang địa chỉ mặc định
+                        fetchDefaultAddress(uid);
+                    })
+                    .addOnFailureListener(e -> fetchDefaultAddress(uid));
+        } else {
+            // Chưa có lựa chọn trước đó -> lấy mặc định
+            fetchDefaultAddress(uid);
+        }
+    }
+
+    private void fetchDefaultAddress(@NonNull String uid) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users").document(uid)
+                .collection("addresses")
+                .whereEqualTo("isDefault", true)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(qs -> {
+                    Address a = null;
+                    for (DocumentSnapshot d : qs.getDocuments()) {
+                        a = d.toObject(Address.class);
+                        if (a != null) { a.setId(d.getId()); }
+                        break;
+                    }
+                    selectedAddress = a;
+                    setText(b.tvAddressValue, a != null ? a.displayLine() : "Chọn địa chỉ");
+                    updateSummaryUI();
+                })
+                .addOnFailureListener(e -> setText(b.tvAddressValue, "Chọn địa chỉ"));
+    }
+
+    private void saveLastAddressId(@NonNull String id) {
+        SharedPreferences sp = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        sp.edit().putString(KEY_LAST_ADDR_ID, id).apply();
+    }
+
+    @Nullable
+    private String loadLastAddressId() {
+        SharedPreferences sp = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        return sp.getString(KEY_LAST_ADDR_ID, null);
+    }
+
+    // ====== Tính tiền và render ======
+
     private void setText(@Nullable TextView tv, @NonNull String txt) {
         if (tv != null) tv.setText(txt);
     }
@@ -170,16 +258,13 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
     private long calcSubtotal() {
         long subtotal = 0L;
         for (CartItem it : items) {
-            // getUnitPrice() có thể là long/int; ép về long để tránh tràn
             subtotal += it.getUnitPrice() * it.getQuantity();
         }
         return subtotal;
     }
 
     private void loadUserAndRender() {
-        String uid = (FirebaseAuth.getInstance().getCurrentUser() != null)
-                ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
-
+        String uid = getEffectiveUserId(requireContext());
         if (uid == null) {
             updateSummaryUI();
             return;
@@ -207,7 +292,7 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
         }
         long voucherDiscount = orderDisc + shipDisc;
 
-        // Giảm giá thành viên theo LoyaltyPolicy (Đồng 5%, Bạc 10%, Vàng 20%, Unrank 0%)
+        // Loyalty theo LoyaltyPolicy
         double loyaltyPercent = 0.0;
         if (currentUser != null) {
             String t = currentUser.getLoyaltyTier();
@@ -283,5 +368,17 @@ public class CheckoutBottomSheet extends BottomSheetDialogFragment {
 
     private static String safe(String s) {
         return s == null ? "" : s;
+    }
+
+    /** Lấy userId thống nhất: ưu tiên USRxxxxx từ SessionManager, fallback Firebase UID */
+    @Nullable
+    private String getEffectiveUserId(@NonNull Context ctx) {
+        try {
+            String custom = new SessionManager(ctx.getApplicationContext()).getUid();
+            if (custom != null && !custom.isEmpty()) return custom;
+        } catch (Throwable ignored) {}
+        return (FirebaseAuth.getInstance().getCurrentUser() != null)
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid()
+                : null;
     }
 }

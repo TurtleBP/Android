@@ -44,14 +44,18 @@ public class AddressPickerSheet extends BottomSheetDialogFragment implements Add
     private final List<Address> data = new ArrayList<>();
     private int selected = RecyclerView.NO_POSITION;
 
-    private final AddressRepository repo = new AddressRepository();
+    private AddressRepository repo; // ✅ sẽ khởi tạo bằng Context trong onAttach()
     private ListenerRegistration reg;
 
     @Override
     public void onAttach(@NonNull Context ctx) {
         super.onAttach(ctx);
+        // Gán listener (nếu parent implements)
         if (getParentFragment() instanceof Listener) listener = (Listener) getParentFragment();
         else if (ctx instanceof Listener) listener = (Listener) ctx;
+
+        // ✅ Khởi tạo repo với Context để dùng custom userId (USRxxxxx) từ SessionManager
+        repo = new AddressRepository(ctx.getApplicationContext());
     }
 
     @Nullable

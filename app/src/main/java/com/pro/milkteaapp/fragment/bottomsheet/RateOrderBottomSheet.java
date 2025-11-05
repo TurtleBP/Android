@@ -10,24 +10,24 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.Timestamp;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Transaction;
 import com.pro.milkteaapp.R;
 import com.pro.milkteaapp.SessionManager;
-import androidx.core.content.ContextCompat; // thêm dòng này ở đầu file
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * BottomSheet đánh giá đơn hàng – mỗi đơn chỉ được đánh giá 1 lần.
+ * ✅ ID người dùng sử dụng USRxxxxx từ SessionManager, không dùng Firebase UID.
  */
 public class RateOrderBottomSheet extends BottomSheetDialogFragment {
 
@@ -44,7 +44,7 @@ public class RateOrderBottomSheet extends BottomSheetDialogFragment {
     private RatingBar ratingBar;
     private EditText reviewInput;
     private MaterialButton btnSubmit, btnCancel;
-    private TextView tvRatingHint; // 🔥 Thêm TextView hint
+    private TextView tvRatingHint;
 
     @Nullable
     @Override
@@ -56,14 +56,14 @@ public class RateOrderBottomSheet extends BottomSheetDialogFragment {
         reviewInput = v.findViewById(R.id.edtReview);
         btnSubmit   = v.findViewById(R.id.btnSubmit);
         btnCancel   = v.findViewById(R.id.btnCancel);
-        tvRatingHint = v.findViewById(R.id.tvRatingHint); // gán view hint
+        tvRatingHint = v.findViewById(R.id.tvRatingHint);
 
-        // 🌟 Làm ngôi sao màu vàng
+        // 🌟 Màu sao vàng
         ratingBar.setProgressTintList(ContextCompat.getColorStateList(requireContext(), R.color.gold));
         ratingBar.setSecondaryProgressTintList(ContextCompat.getColorStateList(requireContext(), R.color.gold));
         ratingBar.setProgressBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.gray_200));
 
-        // 💬 Thay đổi dòng gợi ý theo số sao
+        // 💬 Hiển thị hint khi thay đổi số sao
         ratingBar.setOnRatingBarChangeListener((bar, rating, fromUser) -> {
             if (!fromUser) return;
             String hint = switch ((int) rating) {
@@ -85,7 +85,7 @@ public class RateOrderBottomSheet extends BottomSheetDialogFragment {
 
     private void submitOnce() {
         String orderId = getOrderId();
-        String uid = getUidOrToast();
+        String uid = getUnifiedUidOrToast();
         if (orderId == null || uid == null) return;
 
         final float stars = ratingBar.getRating();
@@ -99,7 +99,6 @@ public class RateOrderBottomSheet extends BottomSheetDialogFragment {
         final SessionManager sm = new SessionManager(requireContext());
         final String displayName = firstNonEmpty(
                 sm.getDisplayName(),
-                FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getDisplayName() : null,
                 emailPrefix(sm.getEmail()),
                 "Người dùng"
         );
@@ -126,8 +125,8 @@ public class RateOrderBottomSheet extends BottomSheetDialogFragment {
             updates.put("rating", stars);
             if (!TextUtils.isEmpty(review)) updates.put("review", review);
             updates.put("ratedAt", FieldValue.serverTimestamp());
-            updates.put("ratedBy", uid);
-            updates.put("userId", uid);
+            updates.put("ratedBy", uid);        // ✅ USRxxxxx
+            updates.put("userId", uid);         // ✅ USRxxxxx
             updates.put("userName", displayName);
             if (!TextUtils.isEmpty(avatarUrl)) updates.put("userAvatar", avatarUrl);
 
@@ -161,17 +160,26 @@ public class RateOrderBottomSheet extends BottomSheetDialogFragment {
         } catch (Throwable ignored) {}
     }
 
+    @Nullable
     private String getOrderId() {
         Bundle args = getArguments();
         return args == null ? null : args.getString(ARG_ORDER_ID);
     }
 
-    private String getUidOrToast() {
-        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
-            toast("Bạn chưa đăng nhập");
-            return null;
+    /** ✅ Lấy USRxxxxx từ SessionManager, fallback cảnh báo nếu chưa đăng nhập */
+    @Nullable
+    private String getUnifiedUidOrToast() {
+        String customId = null;
+        try {
+            customId = new SessionManager(requireContext()).getUid();
+        } catch (Throwable ignored) {}
+
+        if (!TextUtils.isEmpty(customId)) {
+            return customId.trim(); // USRxxxxx
         }
-        return FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        toast("Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.");
+        return null;
     }
 
     private void setLoading(boolean loading) {

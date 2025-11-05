@@ -11,10 +11,10 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.pro.milkteaapp.adapter.AddressAdapter;
-import com.pro.milkteaapp.fragment.AddEditAddressDialog;
-import com.pro.milkteaapp.repository.AddressRepository;
 import com.pro.milkteaapp.databinding.ActivityAddressBinding;
+import com.pro.milkteaapp.fragment.AddEditAddressDialog;
 import com.pro.milkteaapp.models.Address;
+import com.pro.milkteaapp.repository.AddressRepository;
 import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.ArrayList;
@@ -25,7 +25,8 @@ public class AddressActivity extends AppCompatActivity
 
     private final List<Address> data = new ArrayList<>();
     private AddressAdapter adapter;
-    private final AddressRepository repo = new AddressRepository();
+    // ⚠️ Không khởi tạo ở đây để tránh "this" chưa sẵn sàng
+    private AddressRepository repo;
 
     // Realtime listener
     private ListenerRegistration addressesReg;
@@ -36,6 +37,9 @@ public class AddressActivity extends AppCompatActivity
         ActivityAddressBinding binding = ActivityAddressBinding.inflate(getLayoutInflater());
         StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(binding.getRoot());
+
+        // Khởi tạo repo với Context để dùng custom userId (USRxxxxx)
+        repo = new AddressRepository(this);
 
         MaterialToolbar tb = binding.toolbar;
         tb.setNavigationOnClickListener(v -> finish());
@@ -114,6 +118,6 @@ public class AddressActivity extends AppCompatActivity
     @Override
     public void onAddressSaved(Address address, boolean isEdit) {
         // Dùng realtime nên KHÔNG cần cập nhật thủ công danh sách ở đây.
-        // Để trống (no-op). Nếu muốn feedback, có thể show Toast tại đây.
+        // Nếu muốn feedback, có thể show Toast tại đây.
     }
 }

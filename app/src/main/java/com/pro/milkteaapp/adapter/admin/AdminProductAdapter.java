@@ -32,7 +32,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
     public interface OnProductActionListener {
         void onEditProduct(Products product);
         void onDeleteProduct(Products product);
-        void onEditStock(Products product);
     }
 
     private final OnProductActionListener listener;
@@ -45,10 +44,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
         this.listener = listener;
         this.currencyFormat = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
         setHasStableIds(true);
-    }
-
-    public List<Products> getCurrentList() {
-        return new ArrayList<>(productList);
     }
 
     public void updateList(@NonNull List<Products> newList) {
@@ -77,9 +72,7 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
                 return Objects.equals(safeStr(o.getName()), safeStr(n.getName())) &&
                         Objects.equals(safeStr(o.getCategory()), safeStr(n.getCategory())) &&
                         Objects.equals(safeStr(o.getImageUrl()), safeStr(n.getImageUrl())) &&
-                        Objects.equals(o.getPrice(), n.getPrice()) &&
-                        Objects.equals(o.getStock(), n.getStock()) &&
-                        Objects.equals(o.getSoldCount(), n.getSoldCount());
+                        Objects.equals(o.getPrice(), n.getPrice());
             }
         });
 
@@ -115,7 +108,7 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
     }
 
     public class ProductViewHolder extends RecyclerView.ViewHolder {
-        private final TextView productName, productCategory, productPrice, productStock, productSold;
+        private final TextView productName, productCategory, productPrice;
         private final ImageView productImage;
         private final View btnEdit, btnDelete;
 
@@ -124,8 +117,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
             productName     = itemView.findViewById(R.id.productName);
             productCategory = itemView.findViewById(R.id.productCategory);
             productPrice    = itemView.findViewById(R.id.productPrice);
-            productStock    = itemView.findViewById(R.id.productStock);
-            productSold     = itemView.findViewById(R.id.productSold);
             productImage    = itemView.findViewById(R.id.productImage);
             btnEdit         = itemView.findViewById(R.id.btnEdit);
             btnDelete       = itemView.findViewById(R.id.btnDelete);
@@ -135,8 +126,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
             productName.setText(safeStr(p.getName()));
             productCategory.setText(safeStr(p.getCategory()));
             productPrice.setText(formatPrice(p.getPrice()));
-            productStock.setText(String.valueOf(p.getStock() == null ? 0 : p.getStock()));
-            productSold.setText(String.valueOf(p.getSoldCount() == null ? 0 : p.getSoldCount()));
 
             String img = safeStr(p.getImageUrl());
             if (isHttpUrl(img)) {
@@ -180,11 +169,6 @@ public class AdminProductAdapter extends RecyclerView.Adapter<AdminProductAdapte
                 });
             }
 
-            productStock.setOnClickListener(v -> {
-                int pos = getBindingAdapterPosition();
-                if (pos == RecyclerView.NO_POSITION) return;
-                if (listener != null) listener.onEditStock(productList.get(pos));
-            });
         }
 
         private String formatPrice(Double price) {

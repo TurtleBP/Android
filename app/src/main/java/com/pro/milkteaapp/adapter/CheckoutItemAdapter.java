@@ -1,5 +1,6 @@
 package com.pro.milkteaapp.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -30,7 +31,7 @@ public class CheckoutItemAdapter extends RecyclerView.Adapter<CheckoutItemAdapte
         setHasStableIds(true);
     }
 
-    // ID ổn định: productId|size|toppingIds...
+    // ID ổn định: productId|size|sugar|ice|note|toppingIds...
     @Override
     public long getItemId(int position) {
         CartItem ci = items.get(position);
@@ -51,45 +52,45 @@ public class CheckoutItemAdapter extends RecyclerView.Adapter<CheckoutItemAdapte
         return new VH(ItemCheckoutRowBinding.inflate(LayoutInflater.from(ctx), parent, false));
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
         CartItem ci = items.get(position);
         Products p = ci.getMilkTea();
 
+        // Tên
         h.b.tvName.setText(p.getName());
 
-        // Meta: Size • Đường • Đá • Topping: a, b, c
+        // Hàng 1: Size • Đường • Đá
         String size = ci.getSize();
         String sugar = ci.getSugar();
         String ice = ci.getIce();
-        String toppingLabel = ci.getToppingsLabel(); // "" hoặc danh sách
-//        String meta = TextUtils.isEmpty(size) ? "" : String.format(Locale.getDefault(), "Size %s", size);
-//        if (!TextUtils.isEmpty(toppingLabel) && !"Không".equals(toppingLabel)) {
-//            meta = TextUtils.isEmpty(meta) ? ("Topping: " + toppingLabel) : (meta + " • Topping: " + toppingLabel);
-//        }
 
-        StringBuilder metaBuilder = new StringBuilder();
-        if (!TextUtils.isEmpty(size)) metaBuilder.append(String.format(Locale.getDefault(), "Size %s", size));
-
+        StringBuilder line1 = new StringBuilder();
+        if (!TextUtils.isEmpty(size)) {
+            line1.append(String.format(Locale.getDefault(), "Size %s", size));
+        }
         if (!TextUtils.isEmpty(sugar)) {
-            if (metaBuilder.length() > 0) metaBuilder.append(" • ");
-            metaBuilder.append(sugar);
+            if (line1.length() > 0) line1.append(" • ");
+            line1.append(sugar);
         }
-
         if (!TextUtils.isEmpty(ice)) {
-            if (metaBuilder.length() > 0) metaBuilder.append(" • ");
-            metaBuilder.append(ice);
+            if (line1.length() > 0) line1.append(" • ");
+            line1.append(ice);
         }
+        h.b.tvLine1.setText(line1.toString());
+        h.b.tvLine1.setVisibility(line1.length() > 0 ? View.VISIBLE : View.GONE);
 
+        // Hàng 2: Topping (riêng 1 hàng, tự wrap)
+        String toppingLabel = ci.getToppingsLabel(); // ví dụ: "Trân châu trắng, Flan"
         if (!TextUtils.isEmpty(toppingLabel)) {
-            if (metaBuilder.length() > 0) metaBuilder.append(" • ");
-            metaBuilder.append("Topping: ").append(toppingLabel);
+            h.b.tvToppings.setText("Topping: " + toppingLabel);
+            h.b.tvToppings.setVisibility(View.VISIBLE);
+        } else {
+            h.b.tvToppings.setVisibility(View.GONE);
         }
 
-//      h.b.tvMeta.setText(meta);
-        h.b.tvMeta.setText(metaBuilder.toString());
-
-        // hiển thị ghi chú nếu có
+        // Ghi chú
         String note = ci.getNote();
         if (!TextUtils.isEmpty(note)) {
             h.b.tvNote.setText("Ghi chú: " + note);

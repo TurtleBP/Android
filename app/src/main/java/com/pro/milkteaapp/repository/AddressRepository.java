@@ -1,23 +1,73 @@
 package com.pro.milkteaapp.repository;
 
+import android.content.Context;
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldPath;
-import com.google.firebase.firestore.*;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.WriteBatch;
+import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.models.Address;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+/**
+ * AddressRepository
+ * - Ưu tiên lấy userId (USRxxxxx) từ SessionManager nếu có (cần truyền Context vào constructor).
+ * - Nếu không truyền Context: fallback sang FirebaseAuth UID (KHÔNG khuyến nghị vì sẽ lệch với RegisterActivity).
+ */
 public class AddressRepository {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
 
+    /** App context để đọc SessionManager (có thể null nếu dùng constructor mặc định). */
+    @Nullable
+    private final Context appContext;
+
+    /** KHÔNG KHUYẾN NGHỊ: chỉ để giữ tương thích tạm thời với code cũ. */
+    public AddressRepository() {
+        this.appContext = null;
+    }
+
+    /** KHUYẾN NGHỊ: truyền Context để dùng custom userId (USRxxxxx) từ SessionManager. */
+    public AddressRepository(@NonNull Context context) {
+        this.appContext = context.getApplicationContext();
+    }
+
+    /**
+     * Lấy userId hiện hành:
+     * - Nếu có Context: lấy từ SessionManager (customId dạng USRxxxxx).
+     * - Nếu không có/không tìm thấy: fallback sang FirebaseAuth.getUid() (KHÔNG khuyến nghị).
+     */
     private @NonNull String requireUid() {
-        String uid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
-        if (uid == null) throw new IllegalStateException("User not logged in");
-        return uid;
+        // Ưu tiên custom userId (USRxxxxx) đã lưu trong SessionManager sau khi đăng ký/đăng nhập.
+        if (appContext != null) {
+            try {
+                SessionManager sm = new SessionManager(appContext);
+                String customId = sm.getUid();
+                if (!TextUtils.isEmpty(customId)) {
+                    return customId;
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // Fallback: dùng UID thật của FirebaseAuth (sẽ KHÔNG trùng với USRxxxxx).
+        String authUid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
+        if (authUid == null) throw new IllegalStateException("User not logged in");
+        return authUid;
     }
 
     private CollectionReference colRef() {
@@ -106,7 +156,9 @@ public class AddressRepository {
             Boolean def = d.getBoolean("isDefault");
             a.setDefault(def != null && def);
             return a;
-        } catch (Throwable ignored) { return null; }
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 
     private Map<String, Object> toMap(Address a) {

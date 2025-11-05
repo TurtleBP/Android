@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 public class OrderDetailActivity extends AppCompatActivity {
 
@@ -52,6 +53,7 @@ public class OrderDetailActivity extends AppCompatActivity {
 
         // Toolbar + Back
         setSupportActionBar(b.toolbar);
+        Objects.requireNonNull(getSupportActionBar()).setTitle("Chi tiết đơn hàng");
         b.toolbar.setNavigationIcon(com.google.android.material.R.drawable.ic_arrow_back_black_24);
         b.toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 

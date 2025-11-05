@@ -25,7 +25,6 @@ import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -233,15 +232,6 @@ public class AdminProductsFragment extends Fragment
                 .addOnCompleteListener(t -> showLoading(false));
     }
 
-    private void updateProductStock(@NonNull String productId, int newStock) {
-        showLoading(true);
-        db.collection("products").document(productId)
-                .update("stock", newStock, "updatedAt", FieldValue.serverTimestamp())
-                .addOnSuccessListener(r -> toast("Đã cập nhật tồn kho"))
-                .addOnFailureListener(e -> toast("Lỗi cập nhật tồn kho: " + e.getMessage()))
-                .addOnCompleteListener(t -> showLoading(false));
-    }
-
     // ====== UI helpers ======
     private void filterProducts(String query) {
         if (adapter == null) return;
@@ -305,77 +295,6 @@ public class AdminProductsFragment extends Fragment
                 .show();
     }
 
-    @Override
-    public void onEditStock(Products product) {
-        showEditStockDialog(product);
-    }
-
-    private void showEditStockDialog(Products product) {
-        if (getContext() == null || product == null) return;
-
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_stock, null);
-        androidx.appcompat.app.AlertDialog dialog =
-                new androidx.appcompat.app.AlertDialog.Builder(getContext())
-                        .setView(dialogView)
-                        .create();
-
-        android.widget.TextView productName = dialogView.findViewById(R.id.productName);
-        android.widget.TextView stockQuantity = dialogView.findViewById(R.id.stockQuantity);
-        android.widget.EditText editStock = dialogView.findViewById(R.id.editStock);
-        Button btnDecrease = dialogView.findViewById(R.id.btnDecrease);
-        Button btnIncrease = dialogView.findViewById(R.id.btnIncrease);
-        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
-        Button btnSave = dialogView.findViewById(R.id.btnSave);
-
-        int current = Math.max(0, product.getStock() == null ? 0 : product.getStock());
-        productName.setText(safe(product.getName()));
-        stockQuantity.setText(String.valueOf(current));
-        editStock.setText(String.valueOf(current));
-
-        btnDecrease.setOnClickListener(v -> {
-            int cur = parseIntSafe(stockQuantity.getText().toString(), 0);
-            if (cur > 0) cur--;
-            stockQuantity.setText(String.valueOf(cur));
-            editStock.setText(String.valueOf(cur));
-        });
-
-        btnIncrease.setOnClickListener(v -> {
-            int cur = parseIntSafe(stockQuantity.getText().toString(), 0);
-            cur++;
-            stockQuantity.setText(String.valueOf(cur));
-            editStock.setText(String.valueOf(cur));
-        });
-
-        editStock.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void afterTextChanged(Editable s) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String t = s == null ? "" : s.toString().trim();
-                if (!t.isEmpty()) stockQuantity.setText(t);
-            }
-        });
-
-        btnSave.setOnClickListener(v -> {
-            String stockStr = editStock.getText() == null ? "" : editStock.getText().toString().trim();
-            if (stockStr.isEmpty()) {
-                toast("Số lượng không hợp lệ.");
-                return;
-            }
-            int newStock = parseIntSafe(stockStr, current);
-            String pid = safe(product.getId());
-            if (pid.isEmpty()) {
-                toast("Không xác định được ID sản phẩm.");
-                return;
-            }
-            updateProductStock(pid, newStock);
-            dialog.dismiss();
-        });
-
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
-        dialog.show();
-    }
-
     @Override public void scrollToTop() {
         if (recyclerView != null) recyclerView.smoothScrollToPosition(0);
     }
@@ -393,10 +312,6 @@ public class AdminProductsFragment extends Fragment
     private void toast(String msg) { Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show(); }
 
     private String safe(String s) { return s == null ? "" : s; }
-
-    private int parseIntSafe(String s, int fallback) {
-        try { return Integer.parseInt(s.trim()); } catch (Exception e) { return fallback; }
-    }
 
     @Override
     public void onDestroyView() {

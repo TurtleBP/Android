@@ -9,14 +9,16 @@ import android.util.Patterns;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.*;
+import com.pro.milkteaapp.SessionManager;
 import com.pro.milkteaapp.activity.admin.AdminMainActivity;
 import com.pro.milkteaapp.databinding.ActivityLoginBinding;
-import com.pro.milkteaapp.models.User;
 import com.pro.milkteaapp.utils.StatusBarUtil;
 
 public class LoginActivity extends AppCompatActivity {
@@ -76,29 +78,36 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Có thể còn session Firebase hoặc chưa, nhưng is_logged_in mới là "nguồn sự thật" cho auto-route
-        if (auth.getCurrentUser() == null) {
+        FirebaseUser fbUser = auth.getCurrentUser();
+        if (fbUser == null) {
             // Cờ local nói đã login nhưng Firebase không có session → về Login để đăng nhập lại
             clearLoggedInFlagIfInconsistent();
             return;
         }
 
-        if (EMAIL_VERIFY_REQUIRED && !auth.getCurrentUser().isEmailVerified()) {
-            // Yêu cầu xác thực email mà chưa verify → không auto-route
+        if (EMAIL_VERIFY_REQUIRED && !fbUser.isEmailVerified()) {
             Toast.makeText(this, "Email của bạn chưa được xác thực.", Toast.LENGTH_SHORT).show();
             clearLoggedInFlagIfInconsistent();
             return;
         }
 
-        // Đọc role cache để điều hướng nhanh
-        String cachedRole = prefs.getString("role", null);
-        if (!TextUtils.isEmpty(cachedRole)) {
-            routeByRole(cachedRole);
-        } else {
-            // Không có role cache (hiếm gặp vì đã từng login), có thể fetch Firestore rồi route
-            String uid = auth.getCurrentUser().getUid();
-            fetchUserRoleAndRoute(uid);
+        // Ưu tiên dùng custom userId (USRxxxxx) từ SessionManager nếu đã có
+        String cachedCustomId = null;
+        try { cachedCustomId = new SessionManager(getApplicationContext()).getUid(); } catch (Throwable ignored) {}
+        if (!TextUtils.isEmpty(cachedCustomId)) {
+            // Đã có USRxxxxx → lấy role nhanh rồi route
+            fetchRoleAndRouteByCustomId(cachedCustomId);
+            return;
         }
+
+        // Chưa có customId → map từ Firebase user → users/{USRxxxxx}
+        resolveCustomUserId(fbUser.getUid(), fbUser.getEmail(),
+                this::fetchRoleAndRouteByCustomId,
+                e -> {
+                    // Fallback cực đoan về users/{FirebaseUID} (giữ tương thích nếu DB cũ)
+                    Log.w(TAG, "Fallback to legacy users/{FirebaseUID}: " + e.getMessage());
+                    fetchRoleAndRouteByLegacyUid(fbUser.getUid());
+                });
     }
 
     // ====== LOGIN CHÍNH THỨC TỪ UI ======
@@ -106,22 +115,26 @@ public class LoginActivity extends AppCompatActivity {
         setLoading(true);
         auth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
-                    if (authResult.getUser() == null) {
+                    FirebaseUser fbUser = authResult.getUser();
+                    if (fbUser == null) {
                         setLoading(false);
                         showError("Không tìm thấy UID người dùng.");
                         return;
                     }
 
-                    if (EMAIL_VERIFY_REQUIRED && !authResult.getUser().isEmailVerified()) {
+                    if (EMAIL_VERIFY_REQUIRED && !fbUser.isEmailVerified()) {
                         setLoading(false);
                         // Nếu bắt buộc xác thực email, không set is_logged_in
                         showError("Vui lòng xác thực email trước khi đăng nhập.");
                         return;
                     }
 
-                    String uid = authResult.getUser().getUid();
-                    // Lấy role rồi set is_logged_in = true + route
-                    fetchUserRoleAndRoute(uid);
+                    // Map Firebase user -> users/{USRxxxxx}
+                    resolveCustomUserId(fbUser.getUid(), fbUser.getEmail(),
+                            // Thành công: lưu cache + route
+                            this::fetchRoleAndRouteByCustomId,
+                            // Thất bại: fallback legacy
+                            e -> fetchRoleAndRouteByLegacyUid(fbUser.getUid()));
                 })
                 .addOnFailureListener(e -> {
                     setLoading(false);
@@ -130,46 +143,110 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    // Lấy document users/{uid} → lưu SharedPreferences (is_logged_in=true) → điều hướng
-    private void fetchUserRoleAndRoute(String uid) {
-        db.collection("users").document(uid).get()
+    // ====== MAP FirebaseUser -> users/{USRxxxxx} ======
+    /**
+     * Tìm document người dùng theo thứ tự:
+     *  1) users where authUid == firebaseUid
+     *  2) users where email == email
+     *  → Lấy documentId (USRxxxxx) và trả về.
+     */
+    private void resolveCustomUserId(@Nullable String firebaseUid,
+                                     @Nullable String email,
+                                     @NonNull java.util.function.Consumer<String> onFound,
+                                     @NonNull java.util.function.Consumer<Exception> onNotFound) {
+        // Query 1: by authUid
+        if (!TextUtils.isEmpty(firebaseUid)) {
+            db.collection("users")
+                    .whereEqualTo("authUid", firebaseUid)
+                    .limit(1)
+                    .get()
+                    .addOnSuccessListener(q1 -> {
+                        if (!q1.isEmpty()) {
+                            DocumentSnapshot d = q1.getDocuments().get(0);
+                            String customId = d.getId();
+                            cacheIdentityOnLogin(customId, d.getString("fullName"), d.getString("role"));
+                            onFound.accept(customId);
+                        } else {
+                            // Query 2: by email
+                            queryByEmailFallback(email, onFound, onNotFound);
+                        }
+                    })
+                    .addOnFailureListener(e -> queryByEmailFallback(email, onFound, onNotFound));
+        } else {
+            queryByEmailFallback(email, onFound, onNotFound);
+        }
+    }
+
+    private void queryByEmailFallback(@Nullable String email,
+                                      @NonNull java.util.function.Consumer<String> onFound,
+                                      @NonNull java.util.function.Consumer<Exception> onNotFound) {
+        if (TextUtils.isEmpty(email)) {
+            onNotFound.accept(new IllegalStateException("Missing email for mapping"));
+            return;
+        }
+        db.collection("users")
+                .whereEqualTo("email", email)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(q2 -> {
+                    if (!q2.isEmpty()) {
+                        DocumentSnapshot d = q2.getDocuments().get(0);
+                        String customId = d.getId();
+                        cacheIdentityOnLogin(customId, d.getString("fullName"), d.getString("role"));
+                        onFound.accept(customId);
+                    } else {
+                        onNotFound.accept(new IllegalStateException("No users by email"));
+                    }
+                })
+                .addOnFailureListener(onNotFound::accept);
+    }
+
+    // ====== SAU KHI BIẾT USRxxxxx → LẤY ROLE & ROUTE ======
+    private void fetchRoleAndRouteByCustomId(@NonNull String customId) {
+        db.collection("users").document(customId).get()
                 .addOnSuccessListener(snap -> {
                     String role = (snap != null && snap.exists() && snap.getString("role") != null)
                             ? snap.getString("role") : "user";
-
                     String displayName = snap != null ? snap.getString("fullName") : null;
-                    if (TextUtils.isEmpty(displayName)) {
-                        displayName = auth.getCurrentUser() != null ? auth.getCurrentUser().getEmail() : "Người dùng";
-                    }
 
-                    SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
-                    prefs.edit()
-                            .putString("user_id", uid)
-                            .putString("fullName", displayName)  // ProductFragment đang dùng key này
-                            .putString("role", role)
-                            .putBoolean("is_logged_in", true)    // <-- CHỈ set khi ĐĂNG NHẬP thành công
-                            .apply();
+                    // Lưu cache đăng nhập + customId
+                    cacheIdentityOnLogin(customId, displayName, role);
 
                     // Điều hướng
                     routeByRole(role);
                 })
                 .addOnFailureListener(e -> {
-                    setLoading(false);
-                    // Không lấy được role → vẫn có thể cho vào user main (tùy chính sách)
-                    String fallbackName = auth.getCurrentUser() != null ? auth.getCurrentUser().getEmail() : "Người dùng";
-                    SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
-                    prefs.edit()
-                            .putString("username", fallbackName)
-                            .putString("role", "user")
-                            .putBoolean("is_logged_in", true)
-                            .apply();
+                    Log.w(TAG, "fetchRoleAndRouteByCustomId failed: " + e.getMessage());
+                    // Không lấy được role → vẫn route user
+                    cacheIdentityOnLogin(customId, null, "user");
+                    routeByRole("user");
+                });
+    }
 
+    // ====== FALLBACK LEGACY: users/{FirebaseUID} ======
+    private void fetchRoleAndRouteByLegacyUid(@NonNull String legacyUid) {
+        db.collection("users").document(legacyUid).get()
+                .addOnSuccessListener(snap -> {
+                    String role = (snap != null && snap.exists() && snap.getString("role") != null)
+                            ? snap.getString("role") : "user";
+                    String displayName = snap != null ? snap.getString("fullName") : null;
+
+                    // Dù legacy, vẫn cache để app tiếp tục hoạt động (user_id = legacyUid)
+                    cacheIdentityOnLogin(legacyUid, displayName, role);
+
+                    routeByRole(role);
+                })
+                .addOnFailureListener(e -> {
+                    // Nếu DB hoàn toàn không có gì, vẫn cho vào user
+                    Log.w(TAG, "fetchRoleAndRouteByLegacyUid failed: " + e.getMessage());
+                    cacheIdentityOnLogin(legacyUid, null, "user");
                     routeByRole("user");
                 });
     }
 
     // ====== ROUTING THEO ROLE ======
     private void routeByRole(String roleRaw) {
+        setLoading(false);
         if (isNavigating) return; // tránh double navigate
         isNavigating = true;
 
@@ -197,31 +274,33 @@ public class LoginActivity extends AppCompatActivity {
         finish();
     }
 
-    // ====== LƯU DỮ LIỆU LOCAL (nếu bạn còn dùng) ======
-    private void saveUserInfoToSharedPreferences(User user) {
+    // ====== LƯU DỮ LIỆU LOCAL ======
+    /**
+     * Lưu thông tin đăng nhập tối thiểu vào SharedPreferences + SessionManager:
+     * - user_id = documentId (ưu tiên USRxxxxx; fallback: Firebase UID)
+     * - role, fullName (nếu có)
+     * - is_logged_in = true
+     */
+    private void cacheIdentityOnLogin(@NonNull String userIdDoc,
+                                      @Nullable String displayName,
+                                      @Nullable String roleRaw) {
+        String role = normalizeRole(roleRaw);
+
         SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
         prefs.edit()
-                .putString("user_id", safe(user.getUid()))
-                .putString("username", safe(user.getEmail()))
-                .putString("full_name", safe(user.getFullName()))
-                .putString("email", safe(user.getEmail()))
-                .putString("role", normalizeRole(user.getRole()))
+                .putString("user_id", safe(userIdDoc))     // ⚠️ Đây sẽ là USRxxxxx nếu map thành công
+                .putString("fullName", safe(displayName))  // ProductFragment đang dùng key này
+                .putString("role", role)
                 .putBoolean("is_logged_in", true)
                 .apply();
 
-        Log.d(TAG, "Saved user to prefs: " + user.getEmail() + " | role=" + user.getRole());
-    }
-
-    private void saveMinimalUser(String uid, String email, String fullName, String role) {
-        SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
-        prefs.edit()
-                .putString("user_id", safe(uid))
-                .putString("username", safe(email))
-                .putString("full_name", safe(fullName))
-                .putString("email", safe(email))
-                .putString("role", normalizeRole(role))
-                .putBoolean("is_logged_in", true)
-                .apply();
+        // Ghi vào SessionManager nếu có
+        try {
+            SessionManager sm = new SessionManager(getApplicationContext());
+            sm.setUid(userIdDoc); // USRxxxxx / hoặc legacy FirebaseUID
+            sm.setRole(role);
+            if (!TextUtils.isEmpty(displayName)) sm.setDisplayName(displayName);
+        } catch (Throwable ignored) {}
     }
 
     // ====== TIỆN ÍCH ======
@@ -252,7 +331,7 @@ public class LoginActivity extends AppCompatActivity {
         binding.progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
-    private String normalizeRole(String role) {
+    private String normalizeRole(@Nullable String role) {
         if (role == null) return "user";
         String r = role.trim().toLowerCase();
         return ("admin".equals(r)) ? "admin" : "user";

@@ -88,11 +88,7 @@
         <activity
             android:name=".activity.OrderDetailActivity"
             android:exported="false"
-            android:parentActivityName=".activity.MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".activity.MainActivity" />
-        </activity>
+            android:theme="@style/Theme.MilkteaApp.NoActionBar" />
 
         <!-- Profile & Settings -->
         <activity
