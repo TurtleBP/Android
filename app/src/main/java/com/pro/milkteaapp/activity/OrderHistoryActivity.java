@@ -18,15 +18,12 @@ public class OrderHistoryActivity extends AppCompatActivity {
         StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(b.getRoot());
 
-        // Toolbar + Back
         setSupportActionBar(b.toolbar);
         b.toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
-        // Nhúng 1 fragment danh sách đơn (không còn tabs)
         if (savedInstanceState == null) {
-            // Hiển thị tất cả đơn; nếu muốn lọc 1 trạng thái thì đổi "ALL" thành Order.STATUS_*
             getSupportFragmentManager().beginTransaction()
-                    .replace(b.container.getId(), OrdersFragment.newInstance("ALL"))
+                    .replace(b.container.getId(), OrdersFragment.newInstance("ALL", false))
                     .commit();
         }
     }
