@@ -1,14 +1,4 @@
 <resources>
-    <!-- XÓA HOẶC COMMENT TOÀN BỘ AppTheme VÌ ĐANG BỊ TRÙNG/ XUNG ĐỘT -->
-    <!--
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="android:listDivider">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:statusBarColor">@color/white</item>
-    </style>
-    -->
-
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
     <style name="AppTheme.popUpOverlay" parent="ThemeOverlay.AppCompat.Light" />
 

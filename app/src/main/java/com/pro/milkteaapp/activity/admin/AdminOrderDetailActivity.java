@@ -26,7 +26,6 @@ import com.pro.milkteaapp.adapter.OrderLinesAdapter;
 import com.pro.milkteaapp.databinding.ActivityAdminOrderDetailBinding;
 import com.pro.milkteaapp.models.OrderLine;
 import com.pro.milkteaapp.utils.MoneyUtils;
-import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +48,6 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         b = ActivityAdminOrderDetailBinding.inflate(getLayoutInflater());
-        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(b.getRoot());
 
         setSupportActionBar(b.toolbar);

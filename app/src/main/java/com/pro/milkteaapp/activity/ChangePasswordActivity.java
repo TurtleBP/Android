@@ -5,7 +5,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.pro.milkteaapp.databinding.ActivityChangePasswordBinding;
-import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.Objects;
 
@@ -17,7 +16,6 @@ public class ChangePasswordActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityChangePasswordBinding.inflate(getLayoutInflater());
-        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(binding.getRoot());
 
         setupToolbar();

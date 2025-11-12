@@ -26,7 +26,6 @@ import com.pro.milkteaapp.fragment.admin.AdminOrdersFragment;
 import com.pro.milkteaapp.fragment.admin.AdminStatisticsFragment;
 import com.pro.milkteaapp.fragment.admin.AdminUsersFragment;
 import com.pro.milkteaapp.fragment.admin.management.ManagementFragment;
-import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,7 +63,6 @@ public class AdminMainActivity extends AppCompatActivity {
         }
 
         binding = ActivityAdminMainBinding.inflate(getLayoutInflater());
-        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(binding.getRoot());
 
         // map id bottom-nav -> tag fragment

@@ -24,7 +24,6 @@ import com.pro.milkteaapp.databinding.ActivityOrderDetailBinding;
 import com.pro.milkteaapp.models.Order;
 import com.pro.milkteaapp.models.OrderLine;
 import com.pro.milkteaapp.utils.MoneyUtils;
-import com.pro.milkteaapp.utils.StatusBarUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +47,6 @@ public class OrderDetailActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         b = ActivityOrderDetailBinding.inflate(getLayoutInflater());
-        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(b.getRoot());
 
         // Toolbar + Back

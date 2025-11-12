@@ -18,7 +18,6 @@ import com.pro.milkteaapp.fragment.HomeFragment;
 import com.pro.milkteaapp.fragment.MessagesFragment;
 import com.pro.milkteaapp.fragment.ProductFragment;
 import com.pro.milkteaapp.fragment.ProfileFragment;
-import com.pro.milkteaapp.utils.StatusBarUtil;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
-        StatusBarUtil.setupDefaultStatusBar(this);
         setContentView(binding.getRoot());
 
         // Lắng nghe chọn bottom nav
